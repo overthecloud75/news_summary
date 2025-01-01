@@ -1,0 +1,13 @@
+__pycache__/
+bin/
+include/
+lib/
+lib64
+csv/
+logs/
+pyvenv.cfg
+
+chromedriver-linux64
+chromedriver-linux64.zip
+prod_config.py
+dev_config.py
