@@ -1,6 +1,9 @@
 import os
 
-PRODUCTION_MODE = False  # Release를 의미 
+if os.environ.get('PRODUCTION_MODE'):
+    PRODUCTION_MODE = True
+else:
+    PRODUCTION_MODE = False  # Release를 의미 
 
 RELIABLE_NEWS_SOURCE = ['보안뉴스', '디지털타임스']
 

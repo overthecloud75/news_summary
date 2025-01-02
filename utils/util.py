@@ -21,3 +21,7 @@ def make_csv_from_data(csv_filename, data=[]):
 
 def get_today():
     return datetime.today().strftime('%Y-%m-%d')
+
+
+def get_hour():
+    return datetime.now().hour

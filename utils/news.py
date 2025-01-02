@@ -9,6 +9,7 @@ from configs import logger, PRODUCTION_MODE, NEWS_KEYWORD_LIST, RELIABLE_NEWS_SO
 from .ai import summarize_koren_contents_with_bare_api
 
 def read_webdriver():
+    logger.info('start webdriver')
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')  # 브라우저 창을 열지 않고 실행
     options.add_argument('--no-sandbox')
@@ -38,7 +39,6 @@ def read_webdriver():
     return news_list
 
 def get_rss_google_news_list(query='보안'):
-
     logger.info('rss_google_news start')
 
     today = datetime.datetime.today()

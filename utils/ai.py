@@ -1,5 +1,6 @@
 import requests
 import time
+import re
 
 from configs import LLM_URL, LLM_MODEL, logger
 
@@ -30,8 +31,13 @@ def get_from_ollama(prompt):
     # 응답 데이터 처리
     if response.status_code == 200:
         result = response.json()['response']
-        return result.replace('\n\n', '\n')
+        result = remove_leading_br(result.replace('\n\n', '<br>'))
+        return result
     else:
         logger.error(f"Failed to fetch data: {response.status_code}")
         logger.error(response.text)
         return ''
+
+def remove_leading_br(result):
+    # 정규 표현식을 사용하여 맨 앞에 있는 <br> 태그를 제거합니다.
+    return re.sub(r'^\s*<br\s*/?>\s*', '', result, flags=re.IGNORECASE)

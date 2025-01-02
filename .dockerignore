@@ -5,7 +5,6 @@ lib/
 lib64
 csv/
 logs/
-configs/dev_config.py
 
 pyvenv.cfg
 .gitignore
