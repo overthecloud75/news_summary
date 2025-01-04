@@ -75,26 +75,27 @@ def get_message(subject, results):
             .vertical-table td {
                 vertical-align: top;
             }
-            /* 기본 URL 스타일 */
-            .adversary {
-                display: table-cell;
-            }
-            .link-desktop {
-                display: inline;
-            }
-            .link-mobile {
-                display: none;
-            }
-            /* 모바일 뷰에서 URL 숨기고 'link' 표시 */
-            @media only screen and (max-width: 600px) {
-                .adversary {
+            @media (max-width: 600px) {
+                table {
+                    display: block;
+                }
+                caption {
                     display: none;
                 }
-                .link-desktop {
-                    display: none;
+                thead {
+                    display: none; /* 헤더 숨기기 */
                 }
-                .link-mobile {
-                    display: inline;
+                tbody, tr, td {
+                    display: block;
+                    width: 100%;
+                }
+                tr {
+                    margin-bottom: 16px; /* 각 데이터 그룹 간 간격 */
+                }
+                td {
+                    text-align: left;
+                    position: relative;
+                    padding-left: 50%; /* 헤더를 가상으로 표시할 공간 */
                 }
             }
         </style>
