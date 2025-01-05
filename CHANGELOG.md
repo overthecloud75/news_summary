@@ -1,3 +1,7 @@
+* 25/01/06
+    - 0.0.5 (utils/nvd.py) <br>
+        get_cve_data <br>
+
 * 25/01/05
     - 0.0.4 (utils/news.py) <br>
         apply selenium_stealth <br>

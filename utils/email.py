@@ -9,10 +9,10 @@ import os
 from configs import TI_NAME, NEWS_KEYWORD_LIST, LLM_MODEL, ACCOUNT, MAIL_SERVER, CC, TO, CSV_DIR, logger
 
 def send_email(results, subject=None, include_cc=False, attached_file=None):
-    body = get_message(subject, results)
-    mime_text = MIMEText(body, 'html')
+    html = get_news_html(subject, results)
+    mime_text = MIMEText(html, 'html')
 
-    if body:
+    if html:
         mimemsg = MIMEMultipart()
         mimemsg['From'] = 'SECURITY CENTER' + '<' + ACCOUNT['email'] + '>'
         mimemsg['To'] = TO
@@ -47,7 +47,7 @@ def send_email(results, subject=None, include_cc=False, attached_file=None):
     else:
         return False 
 
-def get_message(subject, results):
+def get_news_html(subject, results):
     html = """
     <!DOCTYPE html>
     <html lang="en">
@@ -110,7 +110,6 @@ def get_message(subject, results):
             <thead>
                 <tr>
                     <th style="text-align: center;">No</th>
-                    <th style="text-align: center;">Source</th>
                     <th style="text-align: center;">Title</th>
                     <th style="text-align: center;">Summary</th>
                 </tr>
@@ -121,9 +120,8 @@ def get_message(subject, results):
         html += f"""
             <tr>
                 <td style="text-align: center;">{i + 1}</td>
-                <td>{result['source']}</td>
                 <td>
-                    <a href={result['url']}>{result['title']}</a>
+                    <a href={result['url']}>{result['title']}</a><br>- 출처: {result['source']}
                 </td>
                 <td>{result['summary']}</td>
             </tr>

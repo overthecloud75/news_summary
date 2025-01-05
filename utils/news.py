@@ -1,7 +1,6 @@
 from selenium import webdriver
 from selenium_stealth import stealth
 import time
-import datetime
 import requests
 import feedparser
 from bs4 import BeautifulSoup
@@ -9,6 +8,7 @@ import re
 
 from configs import logger, PRODUCTION_MODE, KEYWORD_NEWS_LIMIT, NEWS_KEYWORD_LIST, RELIABLE_NEWS_SOURCE
 from .ai import summarize_korean_content_with_bare_api, summarize_english_content_with_bare_api
+from .util import get_yesterday, get_today
 
 def read_webdriver():
     logger.info('start webdriver')
@@ -58,11 +58,8 @@ def read_webdriver():
 def get_rss_google_news_list(query='보안'):
     logger.info('rss_google_news start')
 
-    today = datetime.datetime.today()
-    yesterday = today - datetime.timedelta(days=1)
-
-    today = today.strftime('%Y-%m-%d')
-    yesterday = yesterday.strftime('%Y-%m-%d') 
+    yesterday = get_yesterday()
+    today = get_today()
 
     lang_kor = is_korean_or_english(query)
     query = query.replace(' ', '%20') #뛰어쓰기  
