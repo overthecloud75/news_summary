@@ -1,7 +1,7 @@
 import os
 import time
 
-from configs import CSV_DIR, CSV_BASE, SUBJECT_BASE, logger
+from configs import DELIVERY_HOUR, CSV_DIR, CSV_BASE, SUBJECT_BASE, logger
 from utils import read_webdriver, get_today, get_hour, make_csv_file, send_email
 
 if __name__ == '__main__':
@@ -10,7 +10,7 @@ if __name__ == '__main__':
         today = get_today()
         hour = get_hour()
         csv_file_path = f'{CSV_DIR}/{CSV_BASE}_{today}.csv'
-        if not os.path.exists(csv_file_path) and hour > 9:
+        if not os.path.exists(csv_file_path) and hour >= DELIVERY_HOUR:
             try:
                 news_list = read_webdriver()
             except Exception as e:

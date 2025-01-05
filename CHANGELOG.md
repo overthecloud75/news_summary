@@ -1,4 +1,8 @@
-* 25/01/02
+* 25/01/05
+    - 0.0.4 (utils/news.py) <br>
+        apply selenium_stealth <br>
+
+* 25/01/04
     - 0.0.3 (utils/news.py) <br>
         apply Engilsh written News summary <br>
 

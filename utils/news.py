@@ -1,4 +1,5 @@
 from selenium import webdriver
+from selenium_stealth import stealth
 import time
 import datetime
 import requests
@@ -15,9 +16,21 @@ def read_webdriver():
     options.add_argument('--headless')  # 브라우저 창을 열지 않고 실행
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
+
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
     driver = webdriver.Chrome(options=options)
 
     news_list = []
+
+    stealth(driver,
+        languages=["en-US", "en"],
+        vendor="Google Inc.",
+        platform="Win32",
+        webgl_vendor="Intel Inc.",
+        renderer="Intel Iris OpenGL Engine",
+        fix_hairline=True,
+    )
 
     for query in NEWS_KEYWORD_LIST:
         logger.info(query)
@@ -38,6 +51,8 @@ def read_webdriver():
                 news['url'] = url
                 news['summary'] = get_content_from_html(html, news['source'], news['lang_kor'])
                 break 
+    driver.quit()
+    logger.info('driver quit')
     return news_list
 
 def get_rss_google_news_list(query='보안'):
@@ -97,18 +112,20 @@ def get_content_from_html(html, source, lang_kor):
         article = soup.find('div', class_='article_view')
     elif source == '데일리시큐':
         article = soup.find(attrs={'itemprop': 'articleBody'})
+    elif source == 'AI타임스':
+        article = soup.find('article', id='article-view-content-div')
     elif source == 'CIO.com':
         article = soup.find('div', id='remove_no_follow')
     elif source == 'CybersecurityNews':
         article = soup.find('div', class_='td-post-content tagdiv-type')
     elif source == 'SecurityInfoWatch':
         article = soup.find('div', class_='html')
+    elif source == 'The Hacker News':
+        article = soup.find('div', id='articlebody')
     '''
     elif source == 'CyberNews.com':
         article = soup.find('div', class_='section__body')
         article = soup.find(article, class_='content')
-    elif source == 'The Hacker News':
-        article = soup.find('div', id='articleBody')
     elif source == 'Cybersecurity Dive':
         article = soup.find('div', class_='large medium article-body')
     '''
@@ -136,15 +153,22 @@ def remove_some_content(content, source):
         content = content.replace('▷ 제보 내용 : 보안 관련 어떤 내용이든 제보를 기다립니다! ▷ 광고문의 : jywoo@dailysecu.com ★정보보안 대표 미디어 데일리시큐', '')
         content = content.replace('■ 보안 사건사고 제보 하기 ▷ 이메일 :', '')
         content = content.replace('★정보보안 대표 미디어 데일리시큐', '')
-        content = content.replace("/ Dailysecu, Korea's leading security media!★", '')
         content = content.replace("leading security media!★", '')
         content = content.replace('기자 다른기사 보기', '')
         content = content.replace('@dailysecu.com', '')
-        content = content.replace('/ Dailysecu, Korea', '')
         content = content.replace('Dailysecu', '')
+    elif source == 'AI타임스':
+        content = content.replace('@aitimes.com', '')
     elif source == 'CIO.com':
         content = content.replace('dl-ciokorea@foundryco.com', '')
         content = content.replace('@foundryco.com', '')
+    elif source == 'CybersecurityNews':
+        content = content.replace('Investigate Real-World Malicious Links', '')
+        content = content.replace('Malware & Phishing Attacks With ANY.RUN', '')
+        content = content.replace('Try for Free', '')
+    elif source == 'The Hacker News':
+        content = content.replace('Found this article interesting?', '')
+        content = content.replace('Follow us on Twitter  and LinkedIn to read more exclusive content we post.', '')
     logger.info(content)
     logger.info('----')
     return content
