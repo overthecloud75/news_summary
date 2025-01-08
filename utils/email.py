@@ -9,10 +9,9 @@ import os
 from configs import TI_NAME, NEWS_KEYWORD_LIST, LLM_MODEL, ACCOUNT, MAIL_SERVER, CC, TO, CSV_DIR, logger
 
 def send_email(results, subject=None, include_cc=False, attached_file=None):
-    html = get_news_html(subject, results)
-    mime_text = MIMEText(html, 'html')
-
-    if html:
+    if results:
+        html = get_news_html(subject, results)
+        mime_text = MIMEText(html, 'html')
         mimemsg = MIMEMultipart()
         mimemsg['From'] = 'SECURITY CENTER' + '<' + ACCOUNT['email'] + '>'
         mimemsg['To'] = TO
@@ -45,10 +44,10 @@ def send_email(results, subject=None, include_cc=False, attached_file=None):
             logger.error(e)
             return False
     else:
-        return False 
+        return False
 
 def get_news_html(subject, results):
-    html = """
+    html = '''
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -101,11 +100,11 @@ def get_news_html(subject, results):
         </style>
     </head>
     <body>
-    """
+    '''
 
-    html += f"""
+    html += f'''
         <table class="vertical-table">
-            <p>출처: {TI_NAME}, 검색어: {NEWS_KEYWORD_LIST}, 기사는 LMM({LLM_MODEL})으로 요약</p>
+            <p>출처: {TI_NAME}, 검색어: {NEWS_KEYWORD_LIST}, 기사는 LLM({LLM_MODEL})으로 요약</p>
             <caption style="font-size: 15px; font-weight: bold; color: #333; text-align: center; margin-bottom: 10px;">{subject}</caption>
             <thead>
                 <tr>
@@ -115,17 +114,18 @@ def get_news_html(subject, results):
                 </tr>
             </thead>
             <tbody>
-    """
+    '''
     for i, result in enumerate(results):
-        html += f"""
-            <tr>
-                <td style="text-align: center;">{i + 1}</td>
-                <td>
-                    <a href={result['url']}>{result['title']}</a><br>- 출처: {result['source']}
-                </td>
-                <td>{result['summary']}</td>
-            </tr>
-        """
+        if result['summary']:
+            html += f'''
+                <tr>
+                    <td style="text-align: center;">{i + 1}</td>
+                    <td>
+                        <a href={result['url']}>{result['title']}</a><br>- 출처: {result['source']}
+                    </td>
+                    <td>{result['summary']}</td>
+                </tr>
+            '''
     html += '''
             </tbody>
         </table>

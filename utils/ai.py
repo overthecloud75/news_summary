@@ -28,10 +28,12 @@ def summarize_korean_content_with_bare_api(text):
 
 def summarize_english_content_with_bare_api(text):
     try:
-        prompt = 'Without line break and key points, Please summarize the following text: {}' \
+        prompt = 'Without line break and key points, Please summarize the following text into English: {}' \
             '\n\n' \
             'Summary:'.format(text)
         result = get_from_ollama(prompt)
+        logger.info(result)
+        logger.info('-----')
         if result:
             prompt = 'Without explanation and line break, translate the following text into Korean: {}'.format(result)
             result = get_from_ollama(prompt)

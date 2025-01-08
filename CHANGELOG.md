@@ -1,3 +1,7 @@
+* 25/01/08
+    - 0.0.6 (utils/news.py) <br>
+        add some news sources :  'Security & Intelligence 이글루코퍼레이션', 'CSO Online', '인공지능신문'<br>
+
 * 25/01/06
     - 0.0.5 (utils/nvd.py) <br>
         get_cve_data <br>

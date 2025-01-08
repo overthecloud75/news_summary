@@ -22,6 +22,8 @@ def read_webdriver():
     driver = webdriver.Chrome(options=options)
 
     news_list = []
+    news_title_list = []
+    dedup_news_list = []
 
     stealth(driver,
         languages=["en-US", "en"],
@@ -41,19 +43,22 @@ def read_webdriver():
         time.sleep(3)
 
     for news in news_list:
-        driver.get(news['link'])
-        while True:
-            time.sleep(3)
-            url = driver.current_url 
-            if 'https://news.google.com/rss/articles' not in url:
-                logger.info(url)
-                html = driver.page_source
-                news['url'] = url
-                news['summary'] = get_content_from_html(html, news['source'], news['lang_kor'])
-                break 
+        if news['title'] not in news_title_list:   # 중복 기사 제거 
+            news_title_list.append(news['title'])  
+            driver.get(news['link'])
+            while True:
+                time.sleep(3)
+                url = driver.current_url 
+                if 'https://news.google.com/rss/articles' not in url:
+                    logger.info(url)
+                    html = driver.page_source
+                    news['url'] = url
+                    news['summary'] = get_content_from_html(html, news['source'], news['lang_kor'])
+                    dedup_news_list.append(news)
+                    break 
     driver.quit()
     logger.info('driver quit')
-    return news_list
+    return dedup_news_list
 
 def get_rss_google_news_list(query='보안'):
     logger.info('rss_google_news start')
@@ -109,8 +114,18 @@ def get_content_from_html(html, source, lang_kor):
         article = soup.find('div', class_='article_view')
     elif source == '데일리시큐':
         article = soup.find(attrs={'itemprop': 'articleBody'})
-    elif source == 'AI타임스':
+    elif source in ['AI타임스', '인공지능신문']:
         article = soup.find('article', id='article-view-content-div')
+    elif source == 'Security & Intelligence 이글루코퍼레이션':
+        article = ''
+        div_content = soup.find('div', id='content')
+        if div_content:
+            paragraphs = div_content.find_all('p')
+            for p in paragraphs:
+                if article:
+                    article = article + ' ' + p.text      
+                else:
+                    article = p.text
     elif source == 'CIO.com':
         article = soup.find('div', id='remove_no_follow')
     elif source == 'CybersecurityNews':
@@ -119,15 +134,19 @@ def get_content_from_html(html, source, lang_kor):
         article = soup.find('div', class_='html')
     elif source == 'The Hacker News':
         article = soup.find('div', id='articlebody')
-    '''
+    elif source == 'CSO Online':
+        article = soup.find('div', class_='article__main')
     elif source == 'CyberNews.com':
         article = soup.find('div', class_='section__body')
-        article = soup.find(article, class_='content')
+    '''
     elif source == 'Cybersecurity Dive':
         article = soup.find('div', class_='large medium article-body')
     '''
     if article:
-        content = article.get_text(separator=' ', strip=True)
+        if type(article) == str:
+            content = article
+        else: 
+            content = article.get_text(separator=' ', strip=True)
         content = remove_some_content(content, source)
         summary = summarize_content(content, lang_kor)
     else:
@@ -154,8 +173,12 @@ def remove_some_content(content, source):
         content = content.replace('기자 다른기사 보기', '')
         content = content.replace('@dailysecu.com', '')
         content = content.replace('Dailysecu', '')
+    elif source == 'Security & Intelligence 이글루코퍼레이션':
+        content = content.replace('전문화된 보안 관련 자료, 보안 트렌드를 엿볼 수 있는 차세대 통합보안관리 기업 이글루코퍼레이션 보안정보입니다.', '')
     elif source == 'AI타임스':
         content = content.replace('@aitimes.com', '')
+    elif source == '인공지능신문':
+        content = content.replace('이미지:본지DB ', '')
     elif source == 'CIO.com':
         content = content.replace('dl-ciokorea@foundryco.com', '')
         content = content.replace('@foundryco.com', '')

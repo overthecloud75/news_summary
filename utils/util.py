@@ -9,7 +9,7 @@ def make_csv_file(results=[], filename='.csv'):
     make_csv_from_data(filename, data=csv_header)
 
     for i, result in enumerate(results):
-        data = [i, result['source'], result['title'], result['summary']]
+        data = [i + 1, result['source'], result['title'], result['summary']]
         make_csv_from_data(filename, data=data)
 
 def make_csv_from_data(filename, data=[]):
