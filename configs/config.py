@@ -12,11 +12,11 @@ DELIVERY_HOUR = 10
 
 # TI
 TI_NAME = 'Google News'
-NEWS_KEYWORD_LIST = ['보안', 'IT 보안', '사이버 security', 'cyber security', '인공지능 LLM']
-RELIABLE_NEWS_SOURCE = ['보안뉴스', '디지털타임스', '데일리시큐', 'CIO.com', 'Security & Intelligence 이글루코퍼레이션', 
-    'CybersecurityNews', 'SecurityInfoWatch', 'The Hacker News', 'CSO Online', 'AI타임스', '인공지능신문'] 
+NEWS_KEYWORD_LIST = ['보안', 'IT 보안', '사이버 security', 'IT security', 'cyber security', '인공지능 LLM', 'AI LLM']
+RELIABLE_NEWS_SOURCE = ['보안뉴스', '디지털타임스', '데일리시큐', '디지털데일리', 'CIO.com', 'Security & Intelligence 이글루코퍼이션', 
+    'CybersecurityNews', 'SecurityInfoWatch', 'The Hacker News', 'CSO Online', 'SecurityWeek', 'Security Intelligence', 'Cybersecurity Dive', 
+    'AI타임스', '인공지능신문', 'Towards Data Science'] 
    # 'CyberNews.com'
-   # 'Cybersecurity Dive', 'Security Intelligence', 'SecuringIndustry.com', 'SecurityWeek', 'Intelligent CISO'
 
 # Log
 LOG_DIR = 'logs'

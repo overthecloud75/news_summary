@@ -100,9 +100,18 @@ def get_news_html(subject, results=[], llm_model=''):
     <body>
     '''
 
+    news_keywords = ''
+    for news_keyword in NEWS_KEYWORD_LIST:
+        if news_keywords:
+            news_keywords = news_keywords + ', ' + news_keyword
+        else:
+            news_keywords = news_keyword
+
     html += f'''
         <table class="vertical-table">
-            <p>출처: {TI_NAME}, 검색어: {NEWS_KEYWORD_LIST}, 기사는 LLM({llm_model})으로 요약</p>
+            <p>출처: {TI_NAME}</p>
+            <p>검색어: {news_keywords}</p>
+            <p>LLM({llm_model})으로 기사 요약</p>
             <caption style="font-size: 15px; font-weight: bold; color: #333; text-align: center; margin-bottom: 10px;">{subject}</caption>
             <thead>
                 <tr>
@@ -119,7 +128,7 @@ def get_news_html(subject, results=[], llm_model=''):
                 <tr>
                     <td style="text-align: center;">{i + 1}</td>
                     <td>
-                        <a href={result['url']}>{result['title']}</a><br>- 출처: {result['source']}
+                        <a href={result['url']}>{result['title']}</a><br>- 출처: {result['source']}<br>- keyword: {result['keyword']}
                     </td>
                     <td>{result['summary']}</td>
                 </tr>

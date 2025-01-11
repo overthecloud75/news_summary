@@ -1,5 +1,9 @@
 * 25/01/11
-    - 0.0.7 (utils/news.py) <br>
+    - 0.0.8 (utils/news.py) <br>
+        add some news sources : '디지털데일리', 'SecurityWeek', 'Security Intelligence', 'Cybersecurity Dive', 'Towards Data Science' <br>
+
+* 25/01/11
+    - 0.0.7 (ai/vllm.py) <br>
         add LLM_SERVING vllm <br>
 
 * 25/01/08

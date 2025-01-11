@@ -14,8 +14,9 @@ class BaseServing():
     
     def get_news_summary(self, news_list):
         for news in news_list:
-            news['summary'] = self.summarize_content(news['content'], news['lang_kor'])
-            news['llm_model'] = self.model
+            if news['content']:
+                news['summary'] = self.summarize_content(news['content'], news['lang_kor'])
+                news['llm_model'] = self.model
         return news_list 
     
     def summarize_content(self, content, lang_kor):

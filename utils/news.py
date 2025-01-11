@@ -53,7 +53,8 @@ def read_webdriver(llm_model=''):
                     html = driver.page_source
                     news['url'] = url
                     news['content'] = get_content_from_html(html, news['source'], news['lang_kor'])
-                    dedup_news_list.append(news)
+                    if news['content']:
+                        dedup_news_list.append(news)
                     break 
     driver.quit()
     logger.info('driver quit')
@@ -66,13 +67,13 @@ def get_rss_google_news_list(query='보안'):
     today = get_today()
 
     lang_kor = is_korean_or_english(query)
-    query = query.replace(' ', '%20') #뛰어쓰기  
+    query_space = query.replace(' ', '%20') #뛰어쓰기  
 
     if lang_kor:
-        url = f'https://news.google.com/rss/search?q={query}%20after:{yesterday}%20before:{today}&hl=ko&gl=KR&ceid=KR%3Ako'
+        url = f'https://news.google.com/rss/search?q={query_space}%20after:{yesterday}%20before:{today}&hl=ko&gl=KR&ceid=KR%3Ako'
         #url = f'https://news.google.com/rss/search?q={query}&hl=ko&gl=KR&ceid=KR%3Ako'
     else:
-        url = f'https://news.google.com/rss/search?q={query}%20after:{yesterday}%20before:{today}'
+        url = f'https://news.google.com/rss/search?q={query_space}%20after:{yesterday}%20before:{today}'
     logger.info(url)
     response = requests.get(url)
 
@@ -91,7 +92,7 @@ def get_rss_google_news_list(query='보안'):
                 news_title = title_list[0]
                 source = title_list[1]
                 if source in RELIABLE_NEWS_SOURCE:
-                    news = {'title': news_title, 'link': entry.link, 'date': entry.published, 'source': source, 'lang_kor': lang_kor}
+                    news = {'keyword': query, 'title': news_title, 'link': entry.link, 'date': entry.published, 'source': source, 'lang_kor': lang_kor}
                     if news not in news_list:
                         news_list.append(news)
                 if source not in source_list:
@@ -113,18 +114,13 @@ def get_content_from_html(html, source, lang_kor):
         article = soup.find('div', class_='article_view')
     elif source == '데일리시큐':
         article = soup.find(attrs={'itemprop': 'articleBody'})
+    elif source == '디지털데일리':
+        article = soup.find('div', class_='article_content')
     elif source in ['AI타임스', '인공지능신문']:
         article = soup.find('article', id='article-view-content-div')
     elif source == 'Security & Intelligence 이글루코퍼레이션':
-        article = ''
         div_content = soup.find('div', id='content')
-        if div_content:
-            paragraphs = div_content.find_all('p')
-            for p in paragraphs:
-                if article:
-                    article = article + ' ' + p.text      
-                else:
-                    article = p.text
+        article = get_p_text_in_div_content(div_content)
     elif source == 'CIO.com':
         article = soup.find('div', id='remove_no_follow')
     elif source == 'CybersecurityNews':
@@ -137,10 +133,18 @@ def get_content_from_html(html, source, lang_kor):
         article = soup.find('div', class_='article__main')
     elif source == 'CyberNews.com':
         article = soup.find('div', class_='section__body')
-    '''
+    elif source == 'Security Intelligence':
+        div_content = soup.find('main', id='post__content')
+        article = get_p_text_in_div_content(div_content)
+    elif source == 'SecurityWeek':
+        div_content = soup.find('div', class_='zox-post-body')
+        article = get_p_text_in_div_content(div_content)
     elif source == 'Cybersecurity Dive':
-        article = soup.find('div', class_='large medium article-body')
-    '''
+        div_content = soup.find('div', class_='article-body')
+        article = get_p_text_in_div_content(div_content)
+    elif source == 'Towards Data Science':
+        div_content = soup.find('article')
+        article = get_p_text_in_div_content(div_content)
     if article:
         if type(article) == str:
             content = article
@@ -171,6 +175,8 @@ def remove_some_content(content, source):
         content = content.replace('기자 다른기사 보기', '')
         content = content.replace('@dailysecu.com', '')
         content = content.replace('Dailysecu', '')
+    elif source == '디지털데일리':
+        content = content.replace('디지털데일리', '')
     elif source == 'Security & Intelligence 이글루코퍼레이션':
         content = content.replace('전문화된 보안 관련 자료, 보안 트렌드를 엿볼 수 있는 차세대 통합보안관리 기업 이글루코퍼레이션 보안정보입니다.', '')
     elif source == 'AI타임스':
@@ -187,9 +193,23 @@ def remove_some_content(content, source):
     elif source == 'The Hacker News':
         content = content.replace('Found this article interesting?', '')
         content = content.replace('Follow us on Twitter  and LinkedIn to read more exclusive content we post.', '')
+    elif source == 'Towards Data Science':
+        content = content.replace('Follow Towards Data Science', '')
+        content = content.replace('Listen Share', '')
     logger.info(content)
     logger.info('----')
     return content
+
+def get_p_text_in_div_content(div_content):
+    article = ''
+    if div_content:
+        paragraphs = div_content.find_all('p')
+        for p in paragraphs:
+            if article:
+                article = article + ' ' + p.text      
+            else:
+                article = p.text
+    return article
 
 def is_korean_or_english(query):
     lang_kor = True 
