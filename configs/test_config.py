@@ -3,8 +3,7 @@ TI_NAME = 'Google News'
 NEWS_KEYWORD_LIST = ['보안']
 
 # LLM
-LLM_URL = 'http://localhost:11434/api/generate'
-LLM_MODEL = 'llama3.1'
+LLM_DOMAIN = 'http://localhost:11434'
 
 # NAME
 SUBJECT_BASE = '[News Summary]'
@@ -19,5 +18,5 @@ ACCOUNT = {
     'email': 'test@test.com',
     'password': 'password'
 }
-CC = None
+CC = ''
 TO = 'test@test.com'

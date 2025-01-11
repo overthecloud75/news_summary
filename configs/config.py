@@ -5,6 +5,8 @@ if os.environ.get('PRODUCTION_MODE'):
 else:
     PRODUCTION_MODE = False  
 
+LLM_SERVING = 'vllm'
+
 KEYWORD_NEWS_LIMIT = 4
 DELIVERY_HOUR = 10
 

@@ -7,10 +7,9 @@ from bs4 import BeautifulSoup
 import re
 
 from configs import logger, PRODUCTION_MODE, KEYWORD_NEWS_LIMIT, NEWS_KEYWORD_LIST, RELIABLE_NEWS_SOURCE
-from .ai import summarize_korean_content_with_bare_api, summarize_english_content_with_bare_api
 from .util import get_yesterday, get_today
 
-def read_webdriver():
+def read_webdriver(llm_model=''):
     logger.info('start webdriver')
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')  # 브라우저 창을 열지 않고 실행
@@ -53,7 +52,7 @@ def read_webdriver():
                     logger.info(url)
                     html = driver.page_source
                     news['url'] = url
-                    news['summary'] = get_content_from_html(html, news['source'], news['lang_kor'])
+                    news['content'] = get_content_from_html(html, news['source'], news['lang_kor'])
                     dedup_news_list.append(news)
                     break 
     driver.quit()
@@ -148,10 +147,9 @@ def get_content_from_html(html, source, lang_kor):
         else: 
             content = article.get_text(separator=' ', strip=True)
         content = remove_some_content(content, source)
-        summary = summarize_content(content, lang_kor)
     else:
-        summary = ''
-    return summary
+        content = ''
+    return content
 
 def remove_some_content(content, source):
     if source == '보안뉴스':
@@ -201,12 +199,4 @@ def is_korean_or_english(query):
     if english_matches and empty_removed_word == english_matches[0]:
         lang_kor = False
     return lang_kor 
-    
-def summarize_content(content, lang_kor):
-    if lang_kor:
-        summary = summarize_korean_content_with_bare_api(content)
-    else:
-        summary = summarize_english_content_with_bare_api(content)
-    return summary
-
 

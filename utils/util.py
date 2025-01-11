@@ -5,11 +5,11 @@ from configs import logger
 
 def make_csv_file(results=[], filename='.csv'):
     today = get_today()
-    csv_header = ['no', 'source', 'title', 'summary']
+    csv_header = ['no', 'source', 'title', 'content', 'summary', 'llm_model']
     make_csv_from_data(filename, data=csv_header)
 
     for i, result in enumerate(results):
-        data = [i + 1, result['source'], result['title'], result['summary']]
+        data = [i + 1, result['source'], result['title'], result['content'], result['summary'], result['llm_model']]
         make_csv_from_data(filename, data=data)
 
 def make_csv_from_data(filename, data=[]):

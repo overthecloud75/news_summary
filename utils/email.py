@@ -6,28 +6,26 @@ from email.utils import COMMASPACE
 from email.encoders import encode_base64
 import os
 
-from configs import TI_NAME, NEWS_KEYWORD_LIST, LLM_MODEL, ACCOUNT, MAIL_SERVER, CC, TO, CSV_DIR, logger
+from configs import TI_NAME, NEWS_KEYWORD_LIST, ACCOUNT, MAIL_SERVER, CC, TO, logger
 
-def send_email(results, subject=None, include_cc=False, attached_file=None):
-    if results:
-        html = get_news_html(subject, results)
-        mime_text = MIMEText(html, 'html')
+def send_email(news_html, subject='', attached_file=''):
+    if news_html:
+        mime_text = MIMEText(news_html, 'html')
         mimemsg = MIMEMultipart()
         mimemsg['From'] = 'SECURITY CENTER' + '<' + ACCOUNT['email'] + '>'
         mimemsg['To'] = TO
-        if include_cc and CC is not None:
+        if CC:
             mimemsg['Cc'] = CC
         mimemsg['Subject'] = subject
         mimemsg.attach(mime_text)
         part = None 
         attached_file_path = ''
-        if attached_file: 
-            attached_file_path = CSV_DIR +'/'+ attached_file
-        if attached_file and os.path.isfile(attached_file_path):
+
+        if attached_file:
             part = MIMEBase('application', 'octet-stream')
-            part.set_payload(open(attached_file_path,'rb').read())
+            part.set_payload(open(attached_file,'rb').read())
             encode_base64(part)
-            part.add_header('Content-Disposition', 'attachment; filename={}'.format(attached_file))
+            part.add_header('Content-Disposition', 'attachment; filename={}'.format(attached_file.split('/')[-1]))
             mimemsg.attach(part)
         try:
             connection = smtplib.SMTP(host=MAIL_SERVER['host'], port=MAIL_SERVER['port'])
@@ -46,7 +44,7 @@ def send_email(results, subject=None, include_cc=False, attached_file=None):
     else:
         return False
 
-def get_news_html(subject, results):
+def get_news_html(subject, results=[], llm_model=''):
     html = '''
     <!DOCTYPE html>
     <html lang="en">
@@ -104,7 +102,7 @@ def get_news_html(subject, results):
 
     html += f'''
         <table class="vertical-table">
-            <p>출처: {TI_NAME}, 검색어: {NEWS_KEYWORD_LIST}, 기사는 LLM({LLM_MODEL})으로 요약</p>
+            <p>출처: {TI_NAME}, 검색어: {NEWS_KEYWORD_LIST}, 기사는 LLM({llm_model})으로 요약</p>
             <caption style="font-size: 15px; font-weight: bold; color: #333; text-align: center; margin-bottom: 10px;">{subject}</caption>
             <thead>
                 <tr>
