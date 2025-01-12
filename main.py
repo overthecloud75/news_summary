@@ -4,7 +4,7 @@ import sys
 
 from configs import LLM_SERVING, DELIVERY_HOUR, CSV_DIR, NEWS_BASE, SUBJECT_BASE, logger
 from ai import Ollama, VLLM
-from utils import read_webdriver, get_cve_data, get_today, get_hour, make_csv_file, get_news_html, send_email
+from utils import read_webdriver, save_news_to_db, get_cve_data, get_today, get_hour, make_csv_file, get_news_html, send_email
 
 if __name__ == '__main__':
     logger.info('start')
@@ -30,10 +30,14 @@ if __name__ == '__main__':
                 logger.error(e)
                 news_list = []
             if news_list:
-                make_csv_file(results=news_list, filename=news_file_path)
-                news_html = get_news_html(subject, results=news_list, llm_model=llm.model)
-                send_email(news_html, subject=subject)
-                #send_email(news_html, subject=subject, attached_file=news_file_path)
+                try:
+                    save_news_to_db(news_list)
+                    make_csv_file(results=news_list, filename=news_file_path)
+                    news_html = get_news_html(subject, results=news_list, llm_model=llm.model)
+                    send_email(news_html, subject=subject)
+                    #send_email(news_html, subject=subject, attached_file=news_file_path)
+                except Exception as e:
+                    logger.error(e)
         # cve_list = get_cve_data()
         time.sleep(3600)
        

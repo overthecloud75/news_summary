@@ -9,7 +9,7 @@ import re
 from configs import logger, PRODUCTION_MODE, KEYWORD_NEWS_LIMIT, NEWS_KEYWORD_LIST, RELIABLE_NEWS_SOURCE
 from .util import get_yesterday, get_today
 
-def read_webdriver(llm_model=''):
+def read_webdriver():
     logger.info('start webdriver')
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')  # 브라우저 창을 열지 않고 실행
@@ -42,8 +42,8 @@ def read_webdriver(llm_model=''):
         time.sleep(3)
 
     for news in news_list:
-        if news['title'] not in news_title_list:   # 중복 기사 제거 
-            news_title_list.append(news['title'])  
+        if news['name'] not in news_title_list:   # 중복 기사 제거 
+            news_title_list.append(news['name'])  
             driver.get(news['link'])
             while True:
                 time.sleep(3)
@@ -51,7 +51,7 @@ def read_webdriver(llm_model=''):
                 if 'https://news.google.com/rss/articles' not in url:
                     logger.info(url)
                     html = driver.page_source
-                    news['url'] = url
+                    news['reference'] = url
                     news['content'] = get_content_from_html(html, news['source'], news['lang_kor'])
                     if news['content']:
                         dedup_news_list.append(news)
@@ -92,7 +92,7 @@ def get_rss_google_news_list(query='보안'):
                 news_title = title_list[0]
                 source = title_list[1]
                 if source in RELIABLE_NEWS_SOURCE:
-                    news = {'keyword': query, 'title': news_title, 'link': entry.link, 'date': entry.published, 'source': source, 'lang_kor': lang_kor}
+                    news = {'keyword': query, 'name': news_title, 'link': entry.link, 'date': entry.published, 'source': source, 'lang_kor': lang_kor}
                     if news not in news_list:
                         news_list.append(news)
                 if source not in source_list:
@@ -144,7 +144,7 @@ def get_content_from_html(html, source, lang_kor):
         article = get_p_text_in_div_content(div_content)
     elif source == 'Towards Data Science':
         div_content = soup.find('article')
-        article = get_p_text_in_div_content(div_content)
+        article = get_div_text_in_div_content(div_content)
     if article:
         if type(article) == str:
             content = article
@@ -196,6 +196,9 @@ def remove_some_content(content, source):
     elif source == 'Towards Data Science':
         content = content.replace('Follow Towards Data Science', '')
         content = content.replace('Listen Share', '')
+        content = content.replace('TDS Editors  Newsletter', '')
+        content = content.replace('Feeling inspired to write your first TDS post?', '')
+        content = content.replace('We’re always open to contributions from new authors', '')
     logger.info(content)
     logger.info('----')
     return content
@@ -209,6 +212,17 @@ def get_p_text_in_div_content(div_content):
                 article = article + ' ' + p.text      
             else:
                 article = p.text
+    return article
+
+def get_div_text_in_div_content(div_content):
+    article = ''
+    if div_content:
+        paragraphs = div_content.find_all('div')
+        for div in paragraphs:
+            if article:
+                article = article + ' ' + div.text      
+            else:
+                article = div.text
     return article
 
 def is_korean_or_english(query):

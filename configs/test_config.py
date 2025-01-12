@@ -1,9 +1,9 @@
-# TI
-TI_NAME = 'Google News'
-NEWS_KEYWORD_LIST = ['보안']
-
 # LLM
-LLM_DOMAIN = 'http://localhost:11434'
+LLM_DOMAIN = 'http://localhost'
+
+# SAVE
+NEWS_SAVE_URL = 'http://localhost/db'
+NEWS_SAVE_API_KEY = ''
 
 # NAME
 SUBJECT_BASE = '[News Summary]'

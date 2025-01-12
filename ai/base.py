@@ -17,6 +17,9 @@ class BaseServing():
             if news['content']:
                 news['summary'] = self.summarize_content(news['content'], news['lang_kor'])
                 news['llm_model'] = self.model
+                news['content_size'] = len(news['content'])
+                news['summary_size'] = len(news['summary'])
+                news['compression_ratio'] = round(news['summary_size'] / news['content_size'], 3) 
         return news_list 
     
     def summarize_content(self, content, lang_kor):

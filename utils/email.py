@@ -128,7 +128,7 @@ def get_news_html(subject, results=[], llm_model=''):
                 <tr>
                     <td style="text-align: center;">{i + 1}</td>
                     <td>
-                        <a href={result['url']}>{result['title']}</a><br>- 출처: {result['source']}<br>- keyword: {result['keyword']}
+                        <a href={result['reference']}>{result['name']}</a><br>- 출처: {result['source']}<br>- keyword: {result['keyword']}
                     </td>
                     <td>{result['summary']}</td>
                 </tr>

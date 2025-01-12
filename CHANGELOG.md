@@ -1,3 +1,7 @@
+* 25/01/12
+    - 0.0.9 (utils/db.py) <br>
+        apply save_news_to_db <br>
+
 * 25/01/11
     - 0.0.8 (utils/news.py) <br>
         add some news sources : '디지털데일리', 'SecurityWeek', 'Security Intelligence', 'Cybersecurity Dive', 'Towards Data Science' <br>
