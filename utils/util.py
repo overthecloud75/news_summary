@@ -5,7 +5,7 @@ from configs import logger
 
 def make_csv_file(results=[], filename='.csv'):
     today = get_today()
-    csv_header = ['no', 'keyword', 'source', 'name', 'content', 'summary', 'content_size', 'summary_size', 'compression_ratio', 'llm_model']
+    csv_header = ['no', 'keyword', 'query', 'source', 'name', 'content', 'summary', 'content_size', 'summary_size', 'compression_ratio', 'llm_model']
     make_csv_from_data(filename, data=csv_header)
 
     for i, result in enumerate(results):

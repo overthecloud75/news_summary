@@ -6,7 +6,7 @@ import feedparser
 from bs4 import BeautifulSoup
 import re
 
-from configs import logger, PRODUCTION_MODE, KEYWORD_NEWS_LIMIT, NEWS_KEYWORD_LIST, RELIABLE_NEWS_SOURCE
+from configs import logger, PRODUCTION_MODE, KEYWORD_NEWS_LIMIT, NEWS_KEYWORDS, RELIABLE_NEWS_SOURCE
 from .util import get_yesterday, get_today
 
 def read_webdriver():
@@ -33,13 +33,14 @@ def read_webdriver():
         fix_hairline=True,
     )
 
-    for query in NEWS_KEYWORD_LIST:
-        logger.info(query)
-        if PRODUCTION_MODE:
-            news_list = news_list + get_rss_google_news_list(query=query)
-        else:
-            news_list = news_list + get_rss_google_news_list(query=query)[:KEYWORD_NEWS_LIMIT]
-        time.sleep(3)
+    for keyword in NEWS_KEYWORDS:
+        for query in NEWS_KEYWORDS[keyword]:
+            logger.info(query)
+            if PRODUCTION_MODE:
+                news_list = news_list + get_rss_google_news_list(query=query, keyword=keyword)
+            else:
+                news_list = news_list + get_rss_google_news_list(query=query, keyword=keyword)[:KEYWORD_NEWS_LIMIT]
+            time.sleep(3)
 
     for news in news_list:
         if news['name'] not in news_title_list:   # 중복 기사 제거 
@@ -60,7 +61,7 @@ def read_webdriver():
     logger.info('driver quit')
     return dedup_news_list
 
-def get_rss_google_news_list(query='보안'):
+def get_rss_google_news_list(query='보안', keyword='관제'):
     logger.info('rss_google_news start')
 
     yesterday = get_yesterday()
@@ -92,7 +93,7 @@ def get_rss_google_news_list(query='보안'):
                 news_title = title_list[0]
                 source = title_list[1]
                 if source in RELIABLE_NEWS_SOURCE:
-                    news = {'keyword': query, 'name': news_title, 'link': entry.link, 'date': entry.published, 'source': source, 'lang_kor': lang_kor}
+                    news = {'keyword': keyword, 'name': news_title, 'link': entry.link, 'date': entry.published, 'source': source, 'lang_kor': lang_kor, 'query': query}
                     if news not in news_list:
                         news_list.append(news)
                 if source not in source_list:
@@ -141,6 +142,9 @@ def get_content_from_html(html, source, lang_kor):
         article = get_p_text_in_div_content(div_content)
     elif source == 'Cybersecurity Dive':
         div_content = soup.find('div', class_='article-body')
+        article = get_p_text_in_div_content(div_content)
+    elif source == 'GBHackers':
+        div_content = soup.find('div', class_='tdb_single_content')
         article = get_p_text_in_div_content(div_content)
     elif source == 'Towards Data Science':
         div_content = soup.find('article')
@@ -193,12 +197,28 @@ def remove_some_content(content, source):
     elif source == 'The Hacker News':
         content = content.replace('Found this article interesting?', '')
         content = content.replace('Follow us on Twitter  and LinkedIn to read more exclusive content we post.', '')
+    elif source == 'GBHackers':
+        content = content.replace('Find this News Interesting! Follow us on Google News, LinkedIn, and X to Get Instant Updates!', '')
     elif source == 'Towards Data Science':
         content = content.replace('Follow Towards Data Science', '')
         content = content.replace('Listen Share', '')
+        content = content.replace('ListenShare', '')
         content = content.replace('TDS Editors  Newsletter', '')
         content = content.replace('Feeling inspired to write your first TDS post?', '')
         content = content.replace('We’re always open to contributions from new authors', '')
+        content = content.replace('FollowPublished inTowards Data Science', '')
+        content = content.replace('Published inTowards Data Science', '')
+        content = content.replace('don’t hesitate to share it with us', '')
+        content = content.replace('Thank you for supporting the work of our authors!', '')
+        content = content.replace('As we mentioned above, we love publishing articles from new authors', '')
+        content = content.replace('TDS Team', '')
+        content = content.replace('TDS Editors', '')
+        content = content.replace('Sent as aNewsletter', '')
+        content = content.replace('Member-only story', '')
+        content = content.replace('·Follow', '')
+        content = content.replace('Listen Listen', '')
+        content = content.replace('Share Share', '')
+        content = content.replace('Until the next Variable', '')
     logger.info(content)
     logger.info('----')
     return content

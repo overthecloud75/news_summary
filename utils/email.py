@@ -6,7 +6,7 @@ from email.utils import COMMASPACE
 from email.encoders import encode_base64
 import os
 
-from configs import TI_NAME, NEWS_KEYWORD_LIST, ACCOUNT, MAIL_SERVER, CC, TO, logger
+from configs import TI_NAME, NEWS_KEYWORDS, ACCOUNT, MAIL_SERVER, CC, TO, logger
 
 def send_email(news_html, subject='', attached_file=''):
     if news_html:
@@ -97,27 +97,27 @@ def get_news_html(subject, results=[], llm_model=''):
             }
         </style>
     </head>
-    <body>
+    <body style="font-family: Arial, sans-serif;">
     '''
 
     news_keywords = ''
-    for news_keyword in NEWS_KEYWORD_LIST:
+    for news_keyword in NEWS_KEYWORDS:
         if news_keywords:
             news_keywords = news_keywords + ', ' + news_keyword
         else:
             news_keywords = news_keyword
 
     html += f'''
-        <table class="vertical-table">
+        <table class="vertical-table" style="width: 100%; border-collapse: collapse; margin: 20px 0;">
             <p>출처: {TI_NAME}</p>
             <p>검색어: {news_keywords}</p>
             <p>LLM({llm_model})으로 기사 요약</p>
             <caption style="font-size: 15px; font-weight: bold; color: #333; text-align: center; margin-bottom: 10px;">{subject}</caption>
             <thead>
                 <tr>
-                    <th style="text-align: center;">No</th>
-                    <th style="text-align: center;">Title</th>
-                    <th style="text-align: center;">Summary</th>
+                    <th style="text-align: center; background-color: #f2f2f2; border: 1px solid #dddddd; padding: 8px;">No</th>
+                    <th style="text-align: center; background-color: #f2f2f2; border: 1px solid #dddddd; padding: 8px;">Title</th>
+                    <th style="text-align: center; background-color: #f2f2f2; border: 1px solid #dddddd; padding: 8px;">Summary</th>
                 </tr>
             </thead>
             <tbody>
@@ -126,11 +126,11 @@ def get_news_html(subject, results=[], llm_model=''):
         if result['summary']:
             html += f'''
                 <tr>
-                    <td style="text-align: center;">{i + 1}</td>
-                    <td>
-                        <a href={result['reference']}>{result['name']}</a><br>- 출처: {result['source']}<br>- keyword: {result['keyword']}
-                    </td>
-                    <td>{result['summary']}</td>
+                    <td style="text-align: center; border: 1px solid #dddddd; padding: 8px; vertical-align: top;">{i + 1}</td>
+                    <td style="border: 1px solid #dddddd; padding: 8px; vertical-align: top;">
+                        <a href={result['reference']}>{result['name']}</a><br>- 출처: {result['source']}<br>- keyword: {result['keyword'] + '(' + result['query'] + ')'}
+                    </td>                                                                                     
+                    <td style="border: 1px solid #dddddd; padding: 8px; vertical-align: top;">{result['summary']}</td>
                 </tr>
             '''
     html += '''
