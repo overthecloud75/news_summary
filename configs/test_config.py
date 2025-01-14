@@ -1,13 +1,14 @@
+# TI
+TI_API_KEY = ''
+TI_API_URL = 'https://otx.alienvault.com/api/v1/pulses/subscribed'
+
 # LLM
 LLM_DOMAIN = 'http://localhost'
 
 # SAVE
-NEWS_SAVE_URL = 'http://localhost/db'
-NEWS_SAVE_API_KEY = ''
-
-# NAME
-SUBJECT_BASE = '[News Summary]'
-NEWS_BASE = 'NEWS'
+TI_SAVE_URL = 'http://localhost/db/ti'
+NEWS_SAVE_URL = 'http://localhost/db/news'
+API_KEY = ''
 
 # CVE
 NVD_API_KEY = ''

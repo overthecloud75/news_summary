@@ -1,7 +1,9 @@
 import re
 import time 
 import requests
+
 from configs import logger
+from utils import get_yesterday
 
 class BaseServing():
     def __init__(self):
@@ -21,7 +23,37 @@ class BaseServing():
                 news['summary_size'] = len(news['summary'])
                 news['compression_ratio'] = round(news['summary_size'] / news['content_size'], 3) 
         return news_list 
-    
+
+    def get_ti_summary(self, results):
+        ti_results = {
+            'ti_indicator': [],
+            'ti_description': [],
+        }
+        yesterday = get_yesterday()
+        for result in results:
+            created = result['created'].split('.')[0]+'z'
+            modified = result['modified'].split('.')[0]+'z'
+            indicators = result['indicators']
+            if yesterday in modified:
+                for indicator in indicators:
+                    if result['malware_families']:
+                        malware_family = result['malware_families'][0]
+                    else:
+                        malware_family = ''
+
+                    if result['references']:
+                        reference = result['references'][0]
+                    else:
+                        reference = ''
+                    
+                    # save indicator 
+                    ti_results['ti_indicator'].append({'id': result['id'], 'modified': modified, 'name': result['name'], 'adversary': result['adversary'], 
+                        'indicator': indicator['indicator'].replace('.', '[.]'), 'type': indicator['type'], 'malware_family': malware_family})
+                summary = self.summarize_english_content_with_bare_api(result['description'])
+                ti_results['ti_description'].append({'id': result['id'], 'created': created, 'modified': modified, 'name': result['name'], 'description': result['description'], 
+                    'summary': summary, 'adversary': result['adversary'], 'malware_family': malware_family, 'reference': reference})
+        return ti_results 
+
     def summarize_content(self, content, lang_kor):
         if lang_kor:
             summary = self.summarize_korean_content_with_bare_api(content)

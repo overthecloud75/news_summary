@@ -6,10 +6,10 @@ import feedparser
 from bs4 import BeautifulSoup
 import re
 
-from configs import logger, PRODUCTION_MODE, KEYWORD_NEWS_LIMIT, NEWS_KEYWORDS, RELIABLE_NEWS_SOURCE
+from configs import logger, PRODUCTION_MODE, NEWS_KEYWORD_LIMIT, NEWS_KEYWORDS, RELIABLE_NEWS_SOURCE
 from .util import get_yesterday, get_today
 
-def read_webdriver():
+def read_webdriver(category):
     logger.info('start webdriver')
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')  # 브라우저 창을 열지 않고 실행
@@ -33,13 +33,13 @@ def read_webdriver():
         fix_hairline=True,
     )
 
-    for keyword in NEWS_KEYWORDS:
-        for query in NEWS_KEYWORDS[keyword]:
+    for keyword in NEWS_KEYWORDS[category]:
+        for query in NEWS_KEYWORDS[category][keyword]:
             logger.info(query)
             if PRODUCTION_MODE:
-                news_list = news_list + get_rss_google_news_list(query=query, keyword=keyword)
+                news_list = news_list + get_rss_google_news_list(category, query=query, keyword=keyword)
             else:
-                news_list = news_list + get_rss_google_news_list(query=query, keyword=keyword)[:KEYWORD_NEWS_LIMIT]
+                news_list = news_list + get_rss_google_news_list(category, query=query, keyword=keyword)[:NEWS_KEYWORD_LIMIT]
             time.sleep(3)
 
     for news in news_list:
@@ -61,7 +61,7 @@ def read_webdriver():
     logger.info('driver quit')
     return dedup_news_list
 
-def get_rss_google_news_list(query='보안', keyword='관제'):
+def get_rss_google_news_list(category, query='보안', keyword='관제'):
     logger.info('rss_google_news start')
 
     yesterday = get_yesterday()
@@ -92,7 +92,7 @@ def get_rss_google_news_list(query='보안', keyword='관제'):
             if len(title_list) == 2:
                 news_title = title_list[0]
                 source = title_list[1]
-                if source in RELIABLE_NEWS_SOURCE:
+                if source in RELIABLE_NEWS_SOURCE[category]:
                     news = {'keyword': keyword, 'name': news_title, 'link': entry.link, 'date': entry.published, 'source': source, 'lang_kor': lang_kor, 'query': query}
                     if news not in news_list:
                         news_list.append(news)

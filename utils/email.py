@@ -6,7 +6,7 @@ from email.utils import COMMASPACE
 from email.encoders import encode_base64
 import os
 
-from configs import TI_NAME, NEWS_KEYWORDS, ACCOUNT, MAIL_SERVER, CC, TO, logger
+from configs import NEWS_KEYWORDS, ACCOUNT, MAIL_SERVER, CC, TO, logger
 
 def send_email(news_html, subject='', attached_file=''):
     if news_html:
@@ -44,7 +44,7 @@ def send_email(news_html, subject='', attached_file=''):
     else:
         return False
 
-def get_news_html(subject, results=[], llm_model=''):
+def get_news_html(subject, category, results=[], llm_model=''):
     html = '''
     <!DOCTYPE html>
     <html lang="en">
@@ -101,7 +101,7 @@ def get_news_html(subject, results=[], llm_model=''):
     '''
 
     news_keywords = ''
-    for news_keyword in NEWS_KEYWORDS:
+    for news_keyword in NEWS_KEYWORDS[category]:
         if news_keywords:
             news_keywords = news_keywords + ', ' + news_keyword
         else:
@@ -109,7 +109,7 @@ def get_news_html(subject, results=[], llm_model=''):
 
     html += f'''
         <table class="vertical-table" style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-            <p>출처: {TI_NAME}</p>
+            <p>출처: Google News</p>
             <p>검색어: {news_keywords}</p>
             <p>LLM({llm_model})으로 기사 요약</p>
             <caption style="font-size: 15px; font-weight: bold; color: #333; text-align: center; margin-bottom: 10px;">{subject}</caption>
@@ -141,4 +141,96 @@ def get_news_html(subject, results=[], llm_model=''):
     '''
 
     return html 
+
+def get_ti_html(subject, results=[], llm_model=''):
+    html = '''
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Threat Intelligence</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+            }
+            .vertical-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 20px 0;
+            }
+            .vertical-table th, .vertical-table td {
+                border: 1px solid #dddddd;
+                text-align: left;
+                padding: 8px;
+            }
+            .vertical-table th {
+                background-color: #f2f2f2;
+            }
+            .vertical-table td {
+                vertical-align: top;
+            }
+            @media (max-width: 600px) {
+                table {
+                    display: block;
+                }
+                caption {
+                    display: none;
+                }
+                thead {
+                    display: none; /* 헤더 숨기기 */
+                }
+                tbody, tr, td {
+                    display: block;
+                    width: 100%;
+                }
+                tr {
+                    margin-bottom: 16px; /* 각 데이터 그룹 간 간격 */
+                }
+                td {
+                    text-align: left;
+                    position: relative;
+                    padding-left: 50%; /* 헤더를 가상으로 표시할 공간 */
+                }
+            }
+        </style>
+    </head>
+    <body style="font-family: Arial, sans-serif;">
+    '''
+
+    html += f'''
+        <table class="vertical-table" style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <p>출처: Alien Vault
+            <p>LLM({llm_model})으로 description 요약</p>
+            <p>첨부 파일의 IOC 정보를 Proxy, Firewall, Anti-Virus에 적용할 수 있습니다.</p>
+            <caption style="font-size: 15px; font-weight: bold; color: #333; text-align: center; margin-bottom: 10px;">{subject}</caption>
+            <thead>
+                <tr>
+                    <th style="text-align: center; background-color: #f2f2f2; border: 1px solid #dddddd; padding: 8px;">No</th>
+                    <th style="text-align: center; background-color: #f2f2f2; border: 1px solid #dddddd; padding: 8px;">Title</th>
+                    <th style="text-align: center; background-color: #f2f2f2; border: 1px solid #dddddd; padding: 8px;">Summary</th>
+                </tr>
+            </thead>
+            <tbody>
+    '''
+    for i, result in enumerate(results):
+        if result['summary']:
+            html += f'''
+                <tr>
+                    <td style="text-align: center; border: 1px solid #dddddd; padding: 8px; vertical-align: top;">{i + 1}</td>
+                    <td style="border: 1px solid #dddddd; padding: 8px; vertical-align: top;">
+                        <a href={result['reference']}>{result['name']}</a><br>- adversary: {result['adversary']}
+                    </td>                                                                                     
+                    <td style="border: 1px solid #dddddd; padding: 8px; vertical-align: top;">{result['summary']}</td>
+                </tr>
+            '''
+    html += '''
+            </tbody>
+        </table>
+    </body>
+    </html>
+    '''
+
+    return html 
+    
     

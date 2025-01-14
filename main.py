@@ -2,18 +2,17 @@ import os
 import time
 import sys
 
-from configs import LLM_SERVING, DELIVERY_HOUR, CSV_DIR, NEWS_BASE, SUBJECT_BASE, logger
+from configs import LLM_SERVING, DELIVERY_HOUR, CSV_DIR, NEWS_CATEGORIES, TI_SAVE_URL, NEWS_SAVE_URL, logger
 from ai import Ollama, VLLM
-from utils import read_webdriver, save_news_to_db, get_cve_data, get_today, get_hour, make_csv_file, get_news_html, send_email
+from utils import get_results_from_ti, read_webdriver, save_to_db, get_cve_data, get_today, get_hour, make_csv_file, get_ti_html, get_news_html, send_email
 
 if __name__ == '__main__':
     logger.info('start')
     while True:
         today = get_today()
         hour = get_hour()
-        news_file_path = f'{CSV_DIR}/{NEWS_BASE}_{today}.csv'
-        subject = f'{SUBJECT_BASE} {today}'
 
+        # LLM SERVING 
         if LLM_SERVING == 'ollama':
             llm = Ollama()
         elif LLM_SERVING == 'vllm':
@@ -22,23 +21,49 @@ if __name__ == '__main__':
             logger.error('There is no proper LLM_SERVING.')
             sys.exit()
 
-        if not os.path.exists(news_file_path) and hour >= DELIVERY_HOUR:
+        # threat intelligence 
+        csv_file_path = f'{CSV_DIR}/TI_{today}.csv'
+        subject = f'[Threat Intelligence] {today}'
+
+        if not os.path.exists(csv_file_path):
             try:
-                news_list = read_webdriver()
-                news_list = llm.get_news_summary(news_list)
+                results = get_results_from_ti()
+                results = llm.get_ti_summary(results)
             except Exception as e:
                 logger.error(e)
-                news_list = []
-            if news_list:
+                results = []
+            if results:
                 try:
-                    save_news_to_db(news_list)
-                    make_csv_file(results=news_list, filename=news_file_path)
-                    news_html = get_news_html(subject, results=news_list, llm_model=llm.model)
-                    send_email(news_html, subject=subject)
-                    #send_email(news_html, subject=subject, attached_file=news_file_path)
+                    save_to_db(TI_SAVE_URL, results)
+                    make_csv_file(results=results['ti_indicator'], filename=csv_file_path)
+                    html = get_ti_html(subject, results=results['ti_description'], llm_model=llm.model)
+                    if html:
+                        send_email(html, subject=subject, attached_file=csv_file_path)
+                except Exception as e:
+                        logger.error(e)
+
+        # NEWS Summary 
+        for category in NEWS_CATEGORIES:
+            news_file_path = f'{CSV_DIR}/{category}_NEWS_{today}.csv'
+            subject = f'[{category} News Summary] {today}'
+        
+            if not os.path.exists(news_file_path) and hour >= DELIVERY_HOUR:
+                try:
+                    news_list = read_webdriver(category)
+                    news_list = llm.get_news_summary(news_list)
                 except Exception as e:
                     logger.error(e)
-        # cve_list = get_cve_data()
+                    news_list = []
+                if news_list:
+                    try:
+                        save_to_db(NEWS_SAVE_URL, news_list)
+                        make_csv_file(results=news_list, filename=news_file_path)
+                        html = get_news_html(subject, category, results=news_list, llm_model=llm.model)
+                        send_email(html, subject=subject)
+                        #send_email(news_html, subject=subject, attached_file=news_file_path)
+                    except Exception as e:
+                        logger.error(e)
+            # cve_list = get_cve_data()
         time.sleep(3600)
        
     

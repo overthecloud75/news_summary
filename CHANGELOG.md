@@ -1,4 +1,8 @@
-* 25/01/12
+* 25/01/13
+    - 0.1.1 (utils/ti.py) <br>
+        combine with the TI project <br>
+
+* 25/01/13
     - 0.1.0 (utils/email.py) <br>
         css embedding style to inline style <br>
 
