@@ -1,3 +1,7 @@
+* 25/01/14
+    - 0.1.2 (ai/prompt.py) <br>
+        separate prompt from ai/base.py <br>
+
 * 25/01/13
     - 0.1.1 (utils/ti.py) <br>
         combine with the TI project <br>

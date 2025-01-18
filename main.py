@@ -25,7 +25,7 @@ if __name__ == '__main__':
         csv_file_path = f'{CSV_DIR}/TI_{today}.csv'
         subject = f'[Threat Intelligence] {today}'
 
-        if not os.path.exists(csv_file_path):
+        if not os.path.exists(csv_file_path) and hour >= DELIVERY_HOUR:
             try:
                 results = get_results_from_ti()
                 results = llm.get_ti_summary(results)

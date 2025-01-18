@@ -2,6 +2,7 @@ import re
 import time 
 import requests
 
+from .prompt import SUMMARY_KOREAN_TO_KOREAN, SUMMARY_ENGLISTH_TO_KOREAN
 from configs import logger
 from utils import get_yesterday
 
@@ -49,25 +50,18 @@ class BaseServing():
                     # save indicator 
                     ti_results['ti_indicator'].append({'id': result['id'], 'modified': modified, 'name': result['name'], 'adversary': result['adversary'], 
                         'indicator': indicator['indicator'].replace('.', '[.]'), 'type': indicator['type'], 'malware_family': malware_family})
-                summary = self.summarize_english_content_with_bare_api(result['description'])
+                summary = self.summarize_content(result['description'], False)
                 ti_results['ti_description'].append({'id': result['id'], 'created': created, 'modified': modified, 'name': result['name'], 'description': result['description'], 
                     'summary': summary, 'adversary': result['adversary'], 'malware_family': malware_family, 'reference': reference})
         return ti_results 
 
     def summarize_content(self, content, lang_kor):
-        if lang_kor:
-            summary = self.summarize_korean_content_with_bare_api(content)
-        else:
-            summary = self.summarize_english_content_with_bare_api(content)
-        return summary
-
-    def summarize_korean_content_with_bare_api(self, text):
         try:
-            prompt = '이 문서의 주요 내용을 요약해 주세요. 요약은 간결하게 하되, 문서의 핵심 정보를 포함해야 하며 고유 명사를 제외하고는 한국어로 표시가 되어야 합니다.: {}' \
-                '\n\n' \
-                '요약:'.format(text)
+            if lang_kor:
+                prompt = SUMMARY_KOREAN_TO_KOREAN.format(content)
+            else:
+                prompt = SUMMARY_ENGLISTH_TO_KOREAN.format(content)
             result = self.get_result_from_llm(prompt)
-            self.logger.info(result)
             self.logger.info('-----')
             result = self.replace_n_to_br(result)
             self.logger.info(result)
@@ -75,48 +69,27 @@ class BaseServing():
         except Exception as e:
             self.logger.error(e)
             return ''
-
-    def summarize_english_content_with_bare_api(self, text):
-        try:
-            prompt = 'Without line break and key points, Please summarize the following text into English. the summary must be in English' \
-                '\n\n' \
-                'Text: {}' \
-                '\n\n' \
-                'Summary:'.format(text)
-            result = self.get_result_from_llm(prompt)
-            self.logger.info(result)
-            self.logger.info('-----')
-            if result:
-                prompt = 'Without explanation and line break, translate the following text into Korean. the summary must be in Korean' \
-                '\n\n' \
-                'Text: {}'.format(result)
-                result = self.get_result_from_llm(prompt)
-                self.logger.info(result)
-                self.logger.info('-----')
-                result = self.replace_n_to_br(result)
-                self.logger.info(result)
-            return result
-        except Exception as e:
-            logger.error(e)
-            return ''
+        return summary
 
     def get_result_from_llm(self, prompt):
         return ''
 
     def get_base_result_from_llm(self, url, method='GET', data=[]):
         timestamp = time.time()
-
-        if method == 'GET':
-            response = requests.get(url, headers=self.headers)
-        else:
-            response = requests.post(url, json=data, headers=self.headers)
-
-        # 응답 데이터 처리
-        if response.status_code == 200:
-            result = response.json()
-        else:
-            self.logger.error(f'Failed to fetch data: {response.status_code}')
-            self.logger.error(response.text)
+        try:
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers)
+            else:
+                response = requests.post(url, json=data, headers=self.headers)
+            # 응답 데이터 처리
+            if response.status_code == 200:
+                result = response.json()
+            else:
+                self.logger.error(f'Failed to fetch data: {response.status_code}')
+                self.logger.error(response.text)
+                result = ''     
+        except Exception as e:
+            self.logger.error(e)
             result = ''
         self.logger.info(f'LMM resposne_time: {round(time.time() - timestamp, 2)}')
         return result
@@ -130,6 +103,7 @@ class BaseServing():
         result = self.remove_leading_br(result.replace('\n', '<br>'))
         resilt = re.sub(r'\*\*요약:\*\*<br>', '', result)
         result = re.sub(r'\*\*Summary:\*\*<br>', '', result)
-        result = re.sub(r'\*\*', '', result) 
+        result = re.sub(r'\*\*', '', result)
+        result = result.replace('한국어로 요약된 내용:', '\n')
         result = result.replace('요약:<br>', '')
         return result

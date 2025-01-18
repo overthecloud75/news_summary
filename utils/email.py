@@ -215,15 +215,26 @@ def get_ti_html(subject, results=[], llm_model=''):
     '''
     for i, result in enumerate(results):
         if result['summary']:
-            html += f'''
-                <tr>
-                    <td style="text-align: center; border: 1px solid #dddddd; padding: 8px; vertical-align: top;">{i + 1}</td>
-                    <td style="border: 1px solid #dddddd; padding: 8px; vertical-align: top;">
-                        <a href={result['reference']}>{result['name']}</a><br>- adversary: {result['adversary']}
-                    </td>                                                                                     
-                    <td style="border: 1px solid #dddddd; padding: 8px; vertical-align: top;">{result['summary']}</td>
-                </tr>
-            '''
+            if result['adversary']:
+                html += f'''
+                    <tr>
+                        <td style="text-align: center; border: 1px solid #dddddd; padding: 8px; vertical-align: top;">{i + 1}</td>
+                        <td style="border: 1px solid #dddddd; padding: 8px; vertical-align: top;">
+                            <a href={result['reference']}>{result['name']}</a><br>- adversary: {result['adversary']}
+                        </td>                                                                                     
+                        <td style="border: 1px solid #dddddd; padding: 8px; vertical-align: top;">{result['summary']}</td>
+                    </tr>
+                '''
+            else:
+                html += f'''
+                    <tr>
+                        <td style="text-align: center; border: 1px solid #dddddd; padding: 8px; vertical-align: top;">{i + 1}</td>
+                        <td style="border: 1px solid #dddddd; padding: 8px; vertical-align: top;">
+                            <a href={result['reference']}>{result['name']}
+                        </td>                                                                                     
+                        <td style="border: 1px solid #dddddd; padding: 8px; vertical-align: top;">{result['summary']}</td>
+                    </tr>
+                '''
     html += '''
             </tbody>
         </table>

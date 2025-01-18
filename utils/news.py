@@ -6,7 +6,7 @@ import feedparser
 from bs4 import BeautifulSoup
 import re
 
-from configs import logger, PRODUCTION_MODE, NEWS_KEYWORD_LIMIT, NEWS_KEYWORDS, RELIABLE_NEWS_SOURCE
+from configs import logger, PRODUCTION_MODE, NEWS_KEYWORD_LIMIT, NEWS_KEYWORDS, RELIABLE_NEWS_SOURCE, ERROR_DIR
 from .util import get_yesterday, get_today
 
 def read_webdriver(category):
@@ -45,18 +45,21 @@ def read_webdriver(category):
     for news in news_list:
         if news['name'] not in news_title_list:   # 중복 기사 제거 
             news_title_list.append(news['name'])  
-            driver.get(news['link'])
-            while True:
-                time.sleep(3)
-                url = driver.current_url 
-                if 'https://news.google.com/rss/articles' not in url:
-                    logger.info(url)
-                    html = driver.page_source
-                    news['reference'] = url
-                    news['content'] = get_content_from_html(html, news['source'], news['lang_kor'])
-                    if news['content']:
-                        dedup_news_list.append(news)
-                    break 
+            try:
+                driver.get(news['link'])
+                while True:
+                    time.sleep(3)
+                    url = driver.current_url 
+                    if 'https://news.google.com/rss/articles' not in url:
+                        logger.info(url)
+                        html = driver.page_source
+                        news['reference'] = url
+                        news['content'] = get_content_from_html(html, news['source'], news['lang_kor'])
+                        if news['content']:
+                            dedup_news_list.append(news)
+                        break 
+            except Exception as e:
+                logger.error(e)
     driver.quit()
     logger.info('driver quit')
     return dedup_news_list
@@ -146,6 +149,9 @@ def get_content_from_html(html, source, lang_kor):
     elif source == 'GBHackers':
         div_content = soup.find('div', class_='tdb_single_content')
         article = get_p_text_in_div_content(div_content)
+    elif source == 'DevOps.com':
+        div_content = soup.find('div', class_='entry-content')
+        article = get_p_text_in_div_content(div_content)
     elif source == 'Towards Data Science':
         div_content = soup.find('article')
         article = get_div_text_in_div_content(div_content)
@@ -157,6 +163,12 @@ def get_content_from_html(html, source, lang_kor):
         content = remove_some_content(content, source)
     else:
         content = ''
+    if not content:
+        logger.error('plz check html!')
+        today = get_today()
+        filename = source + '_' +  today + '_' + str(time.time())[:10] + '.html'
+        with open(ERROR_DIR + '/' + filename, 'w', encoding='utf-8-sig') as f:
+            f.write(html)
     return content
 
 def remove_some_content(content, source):
@@ -220,7 +232,7 @@ def remove_some_content(content, source):
         content = content.replace('Share Share', '')
         content = content.replace('Until the next Variable', '')
     logger.info(content)
-    logger.info('----')
+    logger.info('-----')
     return content
 
 def get_p_text_in_div_content(div_content):
