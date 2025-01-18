@@ -2,9 +2,9 @@ import os
 import time
 import sys
 
-from configs import LLM_SERVING, DELIVERY_HOUR, CSV_DIR, NEWS_CATEGORIES, CATEGORIES, SYNONYM_DICTIONARY, TI_SAVE_URL, NEWS_SAVE_URL, logger
+from configs import LLM_SERVING, DELIVERY_HOUR, CSV_DIR, NEWS_CATEGORIES, TI_SAVE_URL, NEWS_SAVE_URL, logger
 from ai import Ollama, VLLM
-from utils import get_results_from_ti, News, save_to_db, get_cve_data, get_today, get_hour, make_csv_file, get_ti_html, get_news_html, send_email
+from utils import get_results_from_ti, read_webdriver, save_to_db, get_cve_data, get_today, get_hour, make_csv_file, get_ti_html, get_news_html, send_email
 
 if __name__ == '__main__':
     logger.info('start')
@@ -46,11 +46,10 @@ if __name__ == '__main__':
         for category in NEWS_CATEGORIES:
             news_file_path = f'{CSV_DIR}/{category}_NEWS_{today}.csv'
             subject = f'[{category} News Summary] {today}'
-
+        
             if not os.path.exists(news_file_path) and hour >= DELIVERY_HOUR:
                 try:
-                    news = News()
-                    news_list = news.read_webdriver(category)
+                    news_list = read_webdriver(category)
                     news_list = llm.get_news_summary(news_list)
                 except Exception as e:
                     logger.error(e)
@@ -61,13 +60,10 @@ if __name__ == '__main__':
                         make_csv_file(results=news_list, filename=news_file_path)
                         html = get_news_html(subject, category, results=news_list, llm_model=llm.model)
                         send_email(html, subject=subject)
-                        for title in CATEGORIES: 
-                            groud_predicted_list = llm.evaluate(title, CATEGORIES[title], news_list)
-                            make_csv_file(results=groud_predicted_list, filename=f'{CSV_DIR}/ground_predicted.csv')
                         #send_email(news_html, subject=subject, attached_file=news_file_path)
                     except Exception as e:
                         logger.error(e)
-        # cve_list = get_cve_data()
+            # cve_list = get_cve_data()
         time.sleep(3600)
        
     

@@ -1,4 +1,4 @@
-from .news import News
+from .news import read_webdriver
 from .db import save_to_db
 from .ti import get_results_from_ti
 from .util import *
