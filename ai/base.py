@@ -2,9 +2,9 @@ import re
 import time 
 import requests
 
-from .prompt import SUMMARY_KOREAN_TO_KOREAN, SUMMARY_ENGLISTH_TO_KOREAN
-from configs import logger
-from utils import get_yesterday
+from .prompt import SUMMARY_KOREAN_TO_KOREAN, SUMMARY_ENGLISTH_TO_KOREAN, CATEGORY_PROMPT
+from configs import logger, SYNONYM_DICTIONARY
+from utils import get_yesterday, get_today, is_text_korean_or_english
 
 class BaseServing():
     def __init__(self):
@@ -16,8 +16,10 @@ class BaseServing():
         self.llm_model = ''
     
     def get_news_summary(self, news_list):
+        self.logger.info('news summary start!')
         for news in news_list:
             if news['content']:
+                text_kor = False
                 news['summary'] = self.summarize_content(news['content'], news['lang_kor'])
                 news['llm_model'] = self.model
                 news['content_size'] = len(news['content'])
@@ -26,6 +28,7 @@ class BaseServing():
         return news_list 
 
     def get_ti_summary(self, results):
+        self.logger.info('ti summary start!')
         ti_results = {
             'ti_indicator': [],
             'ti_description': [],
@@ -61,16 +64,46 @@ class BaseServing():
                 prompt = SUMMARY_KOREAN_TO_KOREAN.format(content)
             else:
                 prompt = SUMMARY_ENGLISTH_TO_KOREAN.format(content)
-            result = self.get_result_from_llm(prompt)
-            self.logger.info('-----')
-            result = self.replace_n_to_br(result)
-            self.logger.info(result)
+            
+            text_kor = False
+            while not text_kor:
+                result = self.get_result_from_llm(prompt)
+                self.logger.info('-----')
+                result = self.replace_n_to_br(result)
+                self.logger.info(result)
+                text_kor, korean_ratio = is_text_korean_or_english(result)  # 문장이 한국어인지 판별
+                self.logger.info('text_korean_ratio: {}'.format(korean_ratio))
             return result
         except Exception as e:
             self.logger.error(e)
             return ''
         return summary
 
+    def evaluate(self, title, cateogires, news_list):
+        self.logger.info('{} llm evaluate start!'.format(title))
+        ground_predicted_list = []
+        timestamp = get_today() + '_' + str(time.time())[:10]
+        for news in news_list:
+            ground_predicted = {'title': title, 'timestamp': timestamp}
+            if title == 'news': 
+                if news['query'] in SYNONYM_DICTIONARY:
+                    ground_predicted['ground'] = SYNONYM_DICTIONARY[news['query']]
+                else:
+                    ground_predicted['ground'] = news['query']
+            elif title == 'language':
+                if news['lang_kor']:
+                    ground_predicted['ground'] = '한국어'
+                else: 
+                    ground_predicted['ground'] = '영어'
+            prompt = CATEGORY_PROMPT.format(cateogires, news['content'])
+            ground_predicted['predicted'] = self.get_result_from_llm(prompt)
+            ground_predicted['source'] = news['source']
+            ground_predicted['name'] = news['name']
+            ground_predicted['reference'] = news['reference']
+            ground_predicted_list.append(ground_predicted)
+            self.logger.info(f'''ground: {ground_predicted['ground']}, 'predicted': {ground_predicted['predicted']} ''')
+        return ground_predicted_list
+            
     def get_result_from_llm(self, prompt):
         return ''
 
@@ -101,9 +134,10 @@ class BaseServing():
     def replace_n_to_br(self, result):
         result = result.replace('\n\n', '\n')
         result = self.remove_leading_br(result.replace('\n', '<br>'))
-        resilt = re.sub(r'\*\*요약:\*\*<br>', '', result)
+        result = re.sub(r'\*\*요약:\*\*<br>', '', result)
         result = re.sub(r'\*\*Summary:\*\*<br>', '', result)
         result = re.sub(r'\*\*', '', result)
         result = result.replace('한국어로 요약된 내용:', '\n')
+        result = result.replace('한국어로 요약하자면 다음과 같습니다:', '\n')
         result = result.replace('요약:<br>', '')
         return result

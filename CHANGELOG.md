@@ -1,4 +1,8 @@
-* 25/01/14
+25/01/19
+    - 0.1.2 (ai/base.py) <br>
+        llm category evaulation <br>
+
+* 25/01/18
     - 0.1.2 (ai/prompt.py) <br>
         separate prompt from ai/base.py <br>
 

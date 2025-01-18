@@ -1,7 +1,16 @@
+import os
 import logging
 from logging.config import dictConfig
 
-from .config import LOG_DIR
+# Log
+LOG_DIR = 'logs'
+if not os.path.exists(LOG_DIR):
+    os.mkdir(LOG_DIR)
+
+# Error
+ERROR_DIR = 'logs/errors'
+if not os.path.exists(ERROR_DIR):
+    os.mkdir(ERROR_DIR)
 
 dictConfig({
     'version': 1,
