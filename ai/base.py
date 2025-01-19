@@ -13,7 +13,6 @@ class BaseServing():
             'User-Agent': 'Mozilla/5.0',
             'Content-Type': 'application/json'
         }
-        self.llm_model = ''
     
     def get_news_summary(self, news_list):
         self.logger.info('news summary start!')

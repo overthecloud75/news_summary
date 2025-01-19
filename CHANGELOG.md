@@ -1,8 +1,12 @@
-25/01/19
+* 25/01/19
+    - 0.1.5 <br>
+        little fix <br>
+
+* 25/01/19
     - 0.1.4 (ai/base.py) <br>
         category and probability <br>
 
-25/01/19
+* 25/01/19
     - 0.1.3 (ai/base.py) <br>
         llm category evaulation <br>
 

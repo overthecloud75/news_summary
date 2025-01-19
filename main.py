@@ -64,7 +64,7 @@ if __name__ == '__main__':
                         for title in CATEGORIES: 
                             groud_predicted_list = llm.evaluate(title, CATEGORIES[title], news_list)
                             make_csv_file(results=groud_predicted_list, filename=f'{CSV_DIR}/ground_predicted.csv')
-                            #llm.evaluate(title, CATEGORIES[title], news_list, evaluation_type='few shot')
+                            llm.evaluate(title, CATEGORIES[title], news_list, evaluation_type='few shot')
                             llm.evaluate(title, CATEGORIES[title], news_list, evaluation_type='few shot json')
                     except Exception as e:
                         logger.error(e)

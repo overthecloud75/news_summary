@@ -23,7 +23,7 @@ class VLLM(BaseServing):
             {'role': 'user', 'content': prompt}
         ]
         if self.model:
-            data = {'model': self.model, 'messages': messages}
+            data = {'model': self.model, 'messages': messages, 'temperature': 0.7}
             result = self.get_base_result_from_llm(llm_url, method='POST', data=data)
             if result:
                 try:
