@@ -17,7 +17,7 @@ AI
 LANGUAGE_CATEGORY = '''
 한국어
 영어
-한국어도 영어도 아님 
+기타
 '''
 
 SYNONYM_DICTIONARY = { 

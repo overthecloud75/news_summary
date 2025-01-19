@@ -2,7 +2,7 @@ import re
 import time 
 import requests
 
-from .prompt import SUMMARY_KOREAN_TO_KOREAN, SUMMARY_ENGLISTH_TO_KOREAN, CATEGORY_PROMPT
+from .prompt import SUMMARY_KOREAN_TO_KOREAN, SUMMARY_ENGLISTH_TO_KOREAN, CATEGORY_PROMPT, CATEGORY_FEW_PROMPT, CATEGORY_FEW_JSON_PROMPT
 from configs import logger, SYNONYM_DICTIONARY
 from utils import get_yesterday, get_today, is_text_korean_or_english
 
@@ -19,7 +19,6 @@ class BaseServing():
         self.logger.info('news summary start!')
         for news in news_list:
             if news['content']:
-                text_kor = False
                 news['summary'] = self.summarize_content(news['content'], news['lang_kor'])
                 news['llm_model'] = self.model
                 news['content_size'] = len(news['content'])
@@ -79,30 +78,42 @@ class BaseServing():
             return ''
         return summary
 
-    def evaluate(self, title, cateogires, news_list):
-        self.logger.info('{} llm evaluate start!'.format(title))
+    def evaluate(self, title, cateogires, news_list, evaluation_type='zero shot'):
+        self.logger.info(f'''{title} {evaluation_type} llm evaluate start!''')
         ground_predicted_list = []
         timestamp = get_today() + '_' + str(time.time())[:10]
         for news in news_list:
-            ground_predicted = {'title': title, 'timestamp': timestamp}
-            if title == 'news': 
-                if news['query'] in SYNONYM_DICTIONARY:
-                    ground_predicted['ground'] = SYNONYM_DICTIONARY[news['query']]
+            try:
+                if evaluation_type == 'few shot':
+                    prompt = CATEGORY_FEW_PROMPT.format(cateogires, news['content'])
+                elif evaluation_type == 'few shot json':
+                    prompt = CATEGORY_FEW_JSON_PROMPT.format(cateogires, news['content'])
                 else:
-                    ground_predicted['ground'] = news['query']
-            elif title == 'language':
-                if news['lang_kor']:
-                    ground_predicted['ground'] = '한국어'
-                else: 
-                    ground_predicted['ground'] = '영어'
-            prompt = CATEGORY_PROMPT.format(cateogires, news['content'])
-            ground_predicted['predicted'] = self.get_result_from_llm(prompt)
-            ground_predicted['source'] = news['source']
-            ground_predicted['name'] = news['name']
-            ground_predicted['reference'] = news['reference']
-            ground_predicted_list.append(ground_predicted)
-            self.logger.info(f'''ground: {ground_predicted['ground']}, 'predicted': {ground_predicted['predicted']} ''')
+                    prompt = CATEGORY_PROMPT.format(cateogires, news['content'])
+                predicted = self.category_predict(title, timestamp, prompt, news)
+                ground_predicted_list.append(predicted)
+            except Exception as e:
+                self.logger.error(e)
         return ground_predicted_list
+
+    def category_predict(self, title, timestamp, prompt, news):
+        ground_predicted = {'title': title, 'timestamp': timestamp}
+        if title == 'news': 
+            if news['query'] in SYNONYM_DICTIONARY:
+                ground_predicted['ground'] = SYNONYM_DICTIONARY[news['query']]
+            else:
+                ground_predicted['ground'] = news['query']
+        elif title == 'language':
+            if news['lang_kor']:
+                ground_predicted['ground'] = '한국어'
+            else: 
+                ground_predicted['ground'] = '영어'
+        ground_predicted['predicted'] = self.get_result_from_llm(prompt)
+        ground_predicted['source'] = news['source']
+        ground_predicted['name'] = news['name']
+        ground_predicted['reference'] = news['reference']
+        self.logger.info(f'''ground: {ground_predicted['ground']}, 'predicted': {ground_predicted['predicted']}''')
+        return ground_predicted
             
     def get_result_from_llm(self, prompt):
         return ''
@@ -137,7 +148,7 @@ class BaseServing():
         result = re.sub(r'\*\*요약:\*\*<br>', '', result)
         result = re.sub(r'\*\*Summary:\*\*<br>', '', result)
         result = re.sub(r'\*\*', '', result)
-        result = result.replace('한국어로 요약된 내용:', '\n')
-        result = result.replace('한국어로 요약하자면 다음과 같습니다:', '\n')
+        result = result.replace('한국어로 요약된 내용:', '')
+        result = result.replace('한국어로 요약하자면 다음과 같습니다:', '')
         result = result.replace('요약:<br>', '')
         return result
