@@ -5,10 +5,15 @@ if os.environ.get('PRODUCTION_MODE'):
 else:
     PRODUCTION_MODE = False  
 
+if os.environ.get('SEND_EMAIL'):
+    SEND_EMAIL = True 
+else:
+    SEND_EMAIL = False 
+
 LLM_SERVING = 'vllm'
 
 TI_KEYWORD_LIMIT = 4
-NEWS_KEYWORD_LIMIT = 4
+NEWS_KEYWORD_LIMIT = 2
 DELIVERY_HOUR = 9
 
 # TI

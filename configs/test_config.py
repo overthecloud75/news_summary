@@ -4,6 +4,7 @@ TI_API_URL = 'https://otx.alienvault.com/api/v1/pulses/subscribed'
 
 # LLM
 LLM_DOMAIN = 'http://localhost'
+LLM_API_KEY = ''
 
 # SAVE
 TI_SAVE_URL = 'http://localhost/db/ti'

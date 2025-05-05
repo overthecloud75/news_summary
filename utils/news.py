@@ -4,6 +4,7 @@ import time
 import requests
 import feedparser
 from bs4 import BeautifulSoup
+import os
 
 from configs import logger, PRODUCTION_MODE, NEWS_KEYWORD_LIMIT, NEWS_KEYWORDS, RELIABLE_NEWS_SOURCE, ERROR_DIR
 from .util import get_yesterday, get_today, is_korean_or_english
@@ -12,8 +13,16 @@ class News():
     def __init__(self):
         self.logger = logger 
         self.logger.info('News start!')
-        self._initialize_webdriver()
-    
+        self.driver = None 
+        try:
+            self._initialize_webdriver()
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.error('intitilize webdriver failed')
+            os.system('pkill -f chromedriver')  
+            os.system('pkill -f chrome')
+            os.system('pkill -f chromium')
+
     def _initialize_webdriver(self):
         self.logger.info('start webdriver')
         options = webdriver.ChromeOptions()
@@ -35,47 +44,49 @@ class News():
         )
 
     def read_webdriver(self, category):
-        self.logger.info('read webdriver')
 
         news_list = []
         news_title_list = []
         dedup_news_list = []
 
-        for keyword in NEWS_KEYWORDS[category]:
-            for query in NEWS_KEYWORDS[category][keyword]:
-                self.logger.info(query)
-                if PRODUCTION_MODE:
-                    news_list = news_list + self.get_rss_google_news_list(category, query=query, keyword=keyword)
-                else:
-                    news_list = news_list + self.get_rss_google_news_list(category, query=query, keyword=keyword)[:NEWS_KEYWORD_LIMIT]
-                time.sleep(3)
+        if self.driver:
+            self.logger.info('read webdriver')
 
-        for news in news_list:
-            if news['name'] not in news_title_list:   # 중복 기사 제거 
-                news_title_list.append(news['name'])  
-                try:
-                    self.driver.get(news['link'])
-                    while True:
-                        time.sleep(3)
-                        url = self.driver.current_url 
-                        if 'https://news.google.com/rss/articles' not in url:
-                            self.logger.info(url)
-                            html = self.driver.page_source
-                            if 'Verify you are human' not in html and 'Verifying you are human' not in html:  # check you are human verification
-                                news['reference'] = url
-                                news['content'] = self.get_content_from_html(html, news['source'], news['lang_kor'])
-                                if news['content']:
-                                    dedup_news_list.append(news)
-                            else:
-                                self.logger.error('Verify you are human') 
-                            break 
-                except Exception as e:
-                    self.logger.info(news['link'])
-                    self.logger.error(e)
-                    self.driver.quit()
-                    self._initialize_webdriver()
-        self.driver.quit()
-        self.logger.info('driver quit')
+            for keyword in NEWS_KEYWORDS[category]:
+                for query in NEWS_KEYWORDS[category][keyword]:
+                    self.logger.info(query)
+                    if PRODUCTION_MODE:
+                        news_list = news_list + self.get_rss_google_news_list(category, query=query, keyword=keyword)
+                    else:
+                        news_list = news_list + self.get_rss_google_news_list(category, query=query, keyword=keyword)[:NEWS_KEYWORD_LIMIT]
+                    time.sleep(3)
+
+            for news in news_list:
+                if news['name'] not in news_title_list:   # 중복 기사 제거 
+                    news_title_list.append(news['name'])  
+                    try:
+                        self.driver.get(news['link'])
+                        while True:
+                            time.sleep(3)
+                            url = self.driver.current_url 
+                            if 'https://news.google.com/rss/articles' not in url:
+                                self.logger.info(url)
+                                html = self.driver.page_source
+                                if 'Verify you are human' not in html and 'Verifying you are human' not in html:  # check you are human verification
+                                    news['reference'] = url
+                                    news['content'] = self.get_content_from_html(html, news['source'], news['lang_kor'])
+                                    if news['content']:
+                                        dedup_news_list.append(news)
+                                else:
+                                    self.logger.error('Verify you are human') 
+                                break 
+                    except Exception as e:
+                        self.logger.info(news['link'])
+                        self.logger.error(e)
+                        self.driver.quit()
+                        self._initialize_webdriver()
+            self.driver.quit()
+            self.logger.info('driver quit')
         return dedup_news_list
 
     def get_rss_google_news_list(self, category, query='보안', keyword='관제'):

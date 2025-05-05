@@ -5,9 +5,9 @@ SUMMARY_KOREAN_TO_KOREAN = '''이 문서의 주요 내용을 요약해 주세요
 요약:
 '''
 
-SUMMARY_ENGLISTH_TO_KOREAN = '''Without line break and key points, Please summarize the following text into Korean. the summary must be in Korean.
+SUMMARY_ENGLISTH_TO_KOREAN = '''다음 영어 텍스트를 한국어로 번역을 한 후 요약을 하세요. 반드시 한국어로만 출력해야 합니다. 영어로 출력하지 마세요. 요약은 간결하게 하되, 문서의 핵심 정보를 포함해야 하며 고유 명사를 제외하고는 한국어로 표시가 되어야 합니다.
 
-Text: {}
+문서: {}
 
 요약:
 '''
@@ -66,5 +66,30 @@ probabilities 키에는 각 카테고리와 해당 확률을 포함한 딕셔너
   }}
 }}
 ```
+'''
+
+DGA_FEW_JSON_PROMPT = '''다음 도메인이 DGA(Domain Generation Algorithm)에 의해 생성된 것인지 판단하고, DGA 도메인일 확률을 0%에서 100% 사이로 추정하여 JSON 형태로 출력하세요.  
+판단 시 다음 요소를 각각 분석하고, 각 요소에 대한 DGA 가능성을 확률로 제시한 후 최종 DGA일 확률을 출력하세요.  
+
+판단 요소:
+1. 도메인 이름의 길이
+2. 무작위 문자나 숫자의 비율
+3. 의미 있는 단어의 포함 여부
+4. 일반적으로 사용되는 도메인 구조와의 유사성  
+
+결과는 다음 JSON 형식으로 작성하세요:
+```json
+{
+  "domain": "{}",
+  "analysis": {
+    "length_based_probability": X%, 
+    "randomness_based_probability": X%, 
+    "meaningful_word_probability": X%, 
+    "structure_similarity_probability": X%
+  },
+  "final_probability": X%,
+  "decision": "DGA 도메인일 가능성이 [낮음/높음]"
+}
+
 '''
 

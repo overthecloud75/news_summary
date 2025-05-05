@@ -3,7 +3,7 @@ import time
 import requests
 
 from .prompt import SUMMARY_KOREAN_TO_KOREAN, SUMMARY_ENGLISTH_TO_KOREAN, CATEGORY_PROMPT, CATEGORY_FEW_PROMPT, CATEGORY_FEW_JSON_PROMPT
-from configs import logger, SYNONYM_DICTIONARY
+from configs import logger, SYNONYM_DICTIONARY, LLM_API_KEY
 from utils import get_yesterday, get_today, is_text_korean_or_english
 
 class BaseServing():
@@ -11,7 +11,8 @@ class BaseServing():
         self.logger = logger
         self.headers = {
             'User-Agent': 'Mozilla/5.0',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {LLM_API_KEY}' 
         }
     
     def get_news_summary(self, news_list):
@@ -36,18 +37,16 @@ class BaseServing():
             created = result['created'].split('.')[0]+'z'
             modified = result['modified'].split('.')[0]+'z'
             indicators = result['indicators']
+            if result['malware_families']:
+                malware_family = result['malware_families'][0]
+            else:
+                malware_family = ''
+            if result['references']:
+                reference = result['references'][0]
+            else:
+                reference = ''
             if yesterday in modified:
-                for indicator in indicators:
-                    if result['malware_families']:
-                        malware_family = result['malware_families'][0]
-                    else:
-                        malware_family = ''
-
-                    if result['references']:
-                        reference = result['references'][0]
-                    else:
-                        reference = ''
-                    
+                for indicator in indicators:        
                     # save indicator 
                     ti_results['ti_indicator'].append({'id': result['id'], 'modified': modified, 'name': result['name'], 'adversary': result['adversary'], 
                         'indicator': indicator['indicator'].replace('.', '[.]'), 'type': indicator['type'], 'malware_family': malware_family})
@@ -58,20 +57,24 @@ class BaseServing():
 
     def summarize_content(self, content, lang_kor):
         try:
-            if lang_kor:
-                prompt = SUMMARY_KOREAN_TO_KOREAN.format(content)
+            prompt = self.make_prompt(content, lang_kor)
+            token_len = self.get_token_length(prompt, lang_kor)
+            if token_len < self.max_token:
+                text_kor = False
+                summary_count = 0 
+                while not text_kor:
+                    result = self.get_result_from_llm(prompt)
+                    self.logger.info('-----')
+                    result = self.replace_n_to_br(result)
+                    self.logger.info(result)
+                    text_kor, korean_ratio = is_text_korean_or_english(result)  # 문장이 한국어인지 판별
+                    self.logger.info('text_korean_ratio: {}'.format(korean_ratio))
+                    if not text_kor:
+                        prompt = self.make_prompt(result, lang_kor)
+                return result
             else:
-                prompt = SUMMARY_ENGLISTH_TO_KOREAN.format(content)
-            
-            text_kor = False
-            while not text_kor:
-                result = self.get_result_from_llm(prompt)
-                self.logger.info('-----')
-                result = self.replace_n_to_br(result)
-                self.logger.info(result)
-                text_kor, korean_ratio = is_text_korean_or_english(result)  # 문장이 한국어인지 판별
-                self.logger.info('text_korean_ratio: {}'.format(korean_ratio))
-            return result
+                content = content[:int(len(content) * 0.9)]
+                return summarize_content(self, content, lang_kor)
         except Exception as e:
             self.logger.error(e)
             return ''
@@ -150,4 +153,26 @@ class BaseServing():
         result = result.replace('한국어로 요약된 내용:', '')
         result = result.replace('한국어로 요약하자면 다음과 같습니다:', '')
         result = result.replace('요약:<br>', '')
+        result = result.replace('요약<br>', '')
+        result = result.replace('번역:<br>', '')
         return result
+
+    def make_prompt(self, content, lang_kor):
+        if lang_kor:
+            prompt = SUMMARY_KOREAN_TO_KOREAN.format(content)
+        else:
+            prompt = SUMMARY_ENGLISTH_TO_KOREAN.format(content)
+        return prompt
+
+    def get_token_length(self, prompt, lang_kor):
+        '''
+            영어: 토큰 개수 ≈ 단어 개수 * 1.3
+            한국어/중국어/일본어: 토큰 개수 ≈ 글자 개수 * 2
+            혼합 텍스트 (한/영/숫자 포함): 토큰 개수 ≈ 글자 개수 * 1.5  
+        '''
+        if lang_kor:
+            token_len = len(prompt.split(' ')) * 2
+        else:
+            token_len = len(prompt.split(' ')) * 1.3 
+        return token_len
+

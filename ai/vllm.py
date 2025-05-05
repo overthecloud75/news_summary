@@ -5,16 +5,18 @@ from configs import LLM_DOMAIN
 class VLLM(BaseServing):
     def __init__(self):
         super().__init__()
-        self.model = self.get_llm_model()
+        self.model, self.max_token = self.get_llm_model()
 
     def get_llm_model(self):
         llm_url = LLM_DOMAIN + '/v1/models'
         result = self.get_base_result_from_llm(llm_url, method='GET')
         if result and result['data']:
             llm_model = result['data'][0]['id']
+            max_token = 128000
         else:
             llm_model = ''
-        return llm_model
+            max_token = 0
+        return llm_model, max_token
     
     def get_result_from_llm(self, prompt):
         llm_url = LLM_DOMAIN + '/v1/chat/completions'
