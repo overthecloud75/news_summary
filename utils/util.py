@@ -55,6 +55,6 @@ def is_text_korean_or_english(text):
         if korean_pattern.search(c):
             len_korean = len_korean + 1
     korean_ratio = round(len_korean / len_text, 2)
-    if korean_ratio < 0.65:
+    if korean_ratio < 0.5:
         text_kor = False
     return text_kor, korean_ratio

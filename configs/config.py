@@ -8,12 +8,13 @@ else:
 if os.environ.get('SEND_EMAIL'):
     SEND_EMAIL = True 
 else:
-    SEND_EMAIL = False 
+    SEND_EMAIL = True
 
 LLM_SERVING = 'vllm'
 
 TI_KEYWORD_LIMIT = 4
 NEWS_KEYWORD_LIMIT = 2
+DEEP_RESEARCH_MINIMUM_SCORE = 85
 DELIVERY_HOUR = 9
 
 # TI
@@ -31,12 +32,12 @@ NEWS_KEYWORDS = {
         'AI': ['인공지능 LLM', 'AI LLM', '인공지능'] 
     }
 }
-
 RELIABLE_NEWS_SOURCE = {
     '보안' : ['보안뉴스', '디지털타임스', '데일리시큐', '디지털데일리', 'CIO.com', 'Security & Intelligence 이글루코퍼이션',
                 'CybersecurityNews', 'SecurityInfoWatch', 'The Hacker News', 'CSO Online', 'SecurityWeek', 'Security Intelligence', 'Cybersecurity Dive', 'GBHackers', 'DevOps.com'],
     'AI' : ['AI타임스', '인공지능신문', 'MIT 테크놀로지 리뷰', '더에이아이(THE AI)', 'Towards Data Science']
 } 
+TRAF_EXCEPTION_NEWS_SOURCE = ['보안뉴스', '디지털데일리']
 
 # csv
 CSV_DIR = 'csv'

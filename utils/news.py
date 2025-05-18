@@ -1,12 +1,13 @@
 from selenium import webdriver
 from selenium_stealth import stealth
+import trafilatura
 import time
 import requests
 import feedparser
 from bs4 import BeautifulSoup
 import os
 
-from configs import logger, PRODUCTION_MODE, NEWS_KEYWORD_LIMIT, NEWS_KEYWORDS, RELIABLE_NEWS_SOURCE, ERROR_DIR
+from configs import logger, PRODUCTION_MODE, NEWS_KEYWORD_LIMIT, NEWS_KEYWORDS, RELIABLE_NEWS_SOURCE, TRAF_EXCEPTION_NEWS_SOURCE, ERROR_DIR
 from .util import get_yesterday, get_today, is_korean_or_english
 
 class News():
@@ -14,6 +15,9 @@ class News():
         self.logger = logger 
         self.logger.info('News start!')
         self.driver = None 
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+        }
         try:
             self._initialize_webdriver()
         except Exception as e:
@@ -74,14 +78,17 @@ class News():
                                 html = self.driver.page_source
                                 if 'Verify you are human' not in html and 'Verifying you are human' not in html:  # check you are human verification
                                     news['reference'] = url
-                                    news['content'] = self.get_content_from_html(html, news['source'], news['lang_kor'])
+                                    if news['source'] not in TRAF_EXCEPTION_NEWS_SOURCE:
+                                        news['content'] = self.get_content_from_url(url, news['source'])
+                                    if not news['content']: 
+                                        news['content'] = self.get_content_from_html(html, news['source'])  # news soruce 별 parsing 필요 
                                     if news['content']:
                                         dedup_news_list.append(news)
                                 else:
                                     self.logger.error('Verify you are human') 
                                 break 
                     except Exception as e:
-                        self.logger.info(news['link'])
+                        self.logger.error(news['link'])
                         self.logger.error(e)
                         self.driver.quit()
                         self._initialize_webdriver()
@@ -104,7 +111,7 @@ class News():
         else:
             url = f'https://news.google.com/rss/search?q={query_space}%20after:{yesterday}%20before:{today}'
         self.logger.info(url)
-        response = requests.get(url)
+        response = requests.get(url, self.headers)
 
         news_list = []
 
@@ -121,7 +128,7 @@ class News():
                     news_title = title_list[0]
                     source = title_list[1]
                     if source in RELIABLE_NEWS_SOURCE[category]:
-                        news = {'keyword': keyword, 'name': news_title, 'link': entry.link, 'date': entry.published, 'source': source, 'lang_kor': lang_kor, 'query': query}
+                        news = {'keyword': keyword, 'name': news_title, 'link': entry.link, 'date': entry.published, 'source': source, 'lang_kor': lang_kor, 'query': query, 'category': category, 'content': ''}
                         if news not in news_list:
                             news_list.append(news)
                     if source not in source_list:
@@ -129,7 +136,24 @@ class News():
             self.logger.info(f'news_sources: {source_list}')
         return news_list 
 
-    def get_content_from_html(self, html, source, lang_kor):
+    def get_content_from_url(self, url, source, redirect=False):
+        try:
+            if redirect:
+                response = requests.get(url, self.headers, allow_redirects=True)
+                url = response.url
+                self.logger.info(url)
+            downloaded = trafilatura.fetch_url(url)
+            if not downloaded or downloaded == 'None':
+                content = None 
+            else:
+                content = trafilatura.extract(downloaded)
+                content = self.remove_some_content(content, source)
+        except Exception as e:
+            self.logger.error(e)
+            content = None 
+        return content
+
+    def get_content_from_html(self, html, source):
         soup = BeautifulSoup(html, 'html.parser')
         article = None 
         contents = []
@@ -199,6 +223,7 @@ class News():
     def remove_some_content(self, content, source):
         if source == '보안뉴스':
             content = content.replace('<저작권자: 보안뉴스( www.boannews.com ) 무단전재-재배포금지>', '')
+            content = content.replace('<저작권자: (www.boannews.com) 무단전재-재배포금지>', '')
             content = content.replace('보안뉴스', '')
             content = content.replace('@boannews.com', '')
             content = content.replace('3줄 요약', '')
@@ -217,6 +242,7 @@ class News():
             content = content.replace('@dailysecu.com', '')
             content = content.replace('Dailysecu', '')
         elif source == '디지털데일리':
+            content = content.replace('Copyright ⓒ . 무단전재 및 재배포 금지', '')
             content = content.replace('디지털데일리', '')
         elif source == 'Security & Intelligence 이글루코퍼레이션':
             content = content.replace('전문화된 보안 관련 자료, 보안 트렌드를 엿볼 수 있는 차세대 통합보안관리 기업 이글루코퍼레이션 보안정보입니다.', '')
@@ -231,6 +257,10 @@ class News():
             content = content.replace('Investigate Real-World Malicious Links', '')
             content = content.replace('Malware & Phishing Attacks With ANY.RUN', '')
             content = content.replace('Try for Free', '')
+            content = content.replace('How SOC Teams Save Time and Effort with ANY.RUN', '')
+            content = content.replace('Vulnerability Attack Simulation on How Hackers Rapidly Probe Websites for Entry Points', '')
+            content = content.replace('Live webinar for SOC teams and managers', '')
+            content = content.replace('Free Webinar', '')
         elif source == 'The Hacker News':
             content = content.replace('Found this article interesting?', '')
             content = content.replace('Follow us on Twitter  and LinkedIn to read more exclusive content we post.', '')

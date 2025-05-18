@@ -20,7 +20,7 @@ class Ollama(BaseServing):
             max_token = 0 
         return llm_model, max_token
     
-    def get_result_from_llm(self, prompt):
+    def get_result_from_llm(self, prompt, messages=[]):
         llm_url = LLM_DOMAIN + '/api/generate'
         if self.model:
             data = {'model': self.model, 'prompt': prompt, 'stream': False}
@@ -33,4 +33,4 @@ class Ollama(BaseServing):
                     result = ''
         else:
             result = ''
-        return result 
+        return result, messages

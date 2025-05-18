@@ -4,6 +4,7 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email.utils import COMMASPACE
 from email.encoders import encode_base64
+import markdown
 import os
 
 from configs import NEWS_KEYWORDS, ACCOUNT, MAIL_SERVER, CC, TO, logger
@@ -136,6 +137,81 @@ def get_news_html(subject, category, results=[], llm_model=''):
     html += '''
             </tbody>
         </table>
+    </body>
+    </html>
+    '''
+
+    return html 
+
+def get_deep_research_html(subject, category, results, llm_model=''):
+    html = '''
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Threat Intelligence</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+            }
+            .vertical-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 20px 0;
+            }
+            .vertical-table th, .vertical-table td {
+                border: 1px solid #dddddd;
+                text-align: left;
+                padding: 8px;
+            }
+            .vertical-table th {
+                background-color: #f2f2f2;
+            }
+            .vertical-table td {
+                vertical-align: top;
+            }
+            @media (max-width: 600px) {
+                table {
+                    display: block;
+                }
+                caption {
+                    display: none;
+                }
+                thead {
+                    display: none; /* 헤더 숨기기 */
+                }
+                tbody, tr, td {
+                    display: block;
+                    width: 100%;
+                }
+                tr {
+                    margin-bottom: 16px; /* 각 데이터 그룹 간 간격 */
+                }
+                td {
+                    text-align: left;
+                    position: relative;
+                    padding-left: 50%; /* 헤더를 가상으로 표시할 공간 */
+                }
+            }
+        </style>
+    </head>
+    <body style="font-family: Arial, sans-serif;">
+    '''
+
+    html += f'''
+        <p>LLM({llm_model})으로 Deep Research Report 작성</p>
+        <br>
+    '''
+    for result in results:
+        html += f'''
+        <p>참고 기사 : {result['reference']}
+        <hr>
+        {markdown.markdown(result['report'])}
+        <hr>
+        <br>
+    '''
+    html += '''
     </body>
     </html>
     '''

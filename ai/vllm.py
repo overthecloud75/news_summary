@@ -18,14 +18,17 @@ class VLLM(BaseServing):
             max_token = 0
         return llm_model, max_token
     
-    def get_result_from_llm(self, prompt):
+    def get_result_from_llm(self, prompt, messages=[]):
         llm_url = LLM_DOMAIN + '/v1/chat/completions'
-        messages = [
-            {'role': 'system', 'content': 'You are a helpful assistant.'},
-            {'role': 'user', 'content': prompt}
-        ]
+        if not messages:
+            messages = [
+                {'role': 'system', 'content': 'You are a helpful assistant.'},
+                {'role': 'user', 'content': prompt}
+            ]
+        else:
+            messages.append({'role': 'ueer', 'content': prompt})
         if self.model:
-            data = {'model': self.model, 'messages': messages, 'temperature': 0.7}
+            data = {'model': self.model, 'messages': messages, 'temperature': 0.3}
             result = self.get_base_result_from_llm(llm_url, method='POST', data=data)
             if result:
                 try:
@@ -35,4 +38,5 @@ class VLLM(BaseServing):
                     result = ''
         else:
             result = ''
-        return result 
+        messages.append({'role': 'assistant', 'content': result})
+        return result, messages

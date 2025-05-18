@@ -1,3 +1,7 @@
+* 25/05/19
+    - 0.1.7 <br>
+        apply deep report <br>
+
 * 25/05/05
     - 0.1.6 <br>
         LLM model : exaone3.5 > gemma3 <br>
