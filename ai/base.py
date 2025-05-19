@@ -2,7 +2,7 @@ import re
 import time 
 import requests
 
-from .prompt import SUMMARY_KOREAN_TO_KOREAN, SUMMARY_ENGLISTH_TO_KOREAN, SECURITY_REPORT_KOREAN_TO_KOREAN, SECURITY_REPORT_ENGLISH_TO_KOREAN, CATEGORY_PROMPT, CATEGORY_FEW_PROMPT, CATEGORY_FEW_JSON_PROMPT, CATEGORY_REPORT_PROMPT
+from .prompt import *
 from configs import logger, SYNONYM_DICTIONARY, LLM_API_KEY
 from utils import get_yesterday, get_today, is_text_korean_or_english
 
@@ -138,7 +138,7 @@ class BaseServing():
         return ground_predicted_list
 
     def get_point_from_result(self, result):
-        match = re.search(r'총점:\s*(\d+)\s*/\s*\d+', result)
+        match = re.search(r'총점:\s*(\d+)\s*/\s*\d+', result)   
         if not match:
             match = re.search(r'총점:\s*(\d+)\s*점', result)
         if not match:
@@ -149,6 +149,10 @@ class BaseServing():
             match = re.search(r'점수:\s*(\d+)\s*점', result)
         if not match:
             match = re.search(r'평가:\s*(\d+)\s*점', result)
+        if not match:
+            match = re.search(r'평가:\s*(\d+)\s*/\s*\d+', result)
+        if not match: 
+            match = re.search(r'결과:\s*(\d+)\s*점', result)
         try:
             if match:
                 score = int(match.group(1).strip())
@@ -221,6 +225,8 @@ class BaseServing():
         result = result.replace('요약:<br>', '')
         result = result.replace('요약<br>', '')
         result = result.replace('번역:<br>', '')
+        result = result.replace('## 문서 번역 및 ', '')
+        result = result.replace('## 문서 요약: ', '') 
         return result
 
     def make_summary_prompt(self, content, lang_kor):

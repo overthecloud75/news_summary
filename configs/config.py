@@ -37,7 +37,7 @@ RELIABLE_NEWS_SOURCE = {
                 'CybersecurityNews', 'SecurityInfoWatch', 'The Hacker News', 'CSO Online', 'SecurityWeek', 'Security Intelligence', 'Cybersecurity Dive', 'GBHackers', 'DevOps.com'],
     'AI' : ['AI타임스', '인공지능신문', 'MIT 테크놀로지 리뷰', '더에이아이(THE AI)', 'Towards Data Science']
 } 
-TRAF_EXCEPTION_NEWS_SOURCE = ['보안뉴스', '디지털데일리']
+TRAF_EXCEPTION_NEWS_SOURCE = ['보안뉴스', '디지털데일리', 'The Hacker News']
 
 # csv
 CSV_DIR = 'csv'

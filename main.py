@@ -62,10 +62,14 @@ if __name__ == '__main__':
                     try:
                         save_to_db(NEWS_SAVE_URL, news_list)
                         make_csv_file(results=news_list, filename=news_file_path)
+                        '''
                         html = get_news_html(subject, category, results=news_list, llm_model=llm.model)
                         if SEND_EMAIL:
                             send_email(html, subject=subject)
-                        '''for title in CATEGORIES: 
+                        '''
+                        # evaluate category
+                        '''
+                        for title in CATEGORIES: 
                             groud_predicted_list = llm.evaluate(title, CATEGORIES[title], news_list)
                             make_csv_file(results=groud_predicted_list, filename=f'{CSV_DIR}/ground_predicted.csv')
                             llm.evaluate(title, CATEGORIES[title], news_list, evaluation_type='few shot')
@@ -79,9 +83,11 @@ if __name__ == '__main__':
                         if max_indices and SEND_EMAIL:
                             for max_index in max_indices:
                                 report = llm.deep_research(news_list[max_index])
-                                results.append({'reference': news_list[max_index]['reference'], 'report': report})
-                            html = get_deep_research_html(deep_research_subject, category, results=results, llm_model=llm.model)
-                            send_email(html, subject=deep_research_subject)
+                                if report:
+                                    results.append({'reference': news_list[max_index]['reference'], 'report': report})
+                            if results:
+                                html = get_deep_research_html(deep_research_subject, category, results=results, llm_model=llm.model)
+                                send_email(html, subject=deep_research_subject)
                     except Exception as e:
                         logger.error(e)
         # cve_list = get_cve_data()

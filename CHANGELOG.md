@@ -1,4 +1,8 @@
 * 25/05/19
+    - 0.1.8 <br>
+        modify report prompt <br>
+
+* 25/05/19
     - 0.1.7 <br>
         apply deep report <br>
 
