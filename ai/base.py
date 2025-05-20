@@ -4,7 +4,7 @@ import requests
 
 from .prompt import *
 from configs import logger, SYNONYM_DICTIONARY, LLM_API_KEY
-from utils import get_yesterday, get_today, is_text_korean_or_english
+from utils import get_yesterday, get_today, is_text_korean_or_english, strip_useless
 
 class BaseServing():
     def __init__(self):
@@ -65,7 +65,7 @@ class BaseServing():
                 while not text_kor:
                     result, messages = self.get_result_from_llm(prompt)
                     self.logger.info('-----')
-                    result = self.replace_n_to_br(result)
+                    result = strip_useless(result)
                     self.logger.info(result)
                     text_kor, korean_ratio = is_text_korean_or_english(result)  # 문장이 한국어인지 판별
                     self.logger.info('text_korean_ratio: {}'.format(korean_ratio))
@@ -138,24 +138,11 @@ class BaseServing():
         return ground_predicted_list
 
     def get_point_from_result(self, result):
-        match = re.search(r'총점:\s*(\d+)\s*/\s*\d+', result)   
-        if not match:
-            match = re.search(r'총점:\s*(\d+)\s*점', result)
-        if not match:
-            match = re.search(r'총점:\*\*\s*(\d+)\s*/\s*100', result)
-        if not match:
-            match = re.search(r'점수:\s*(\d+)\s*/\s*\d+', result)
-        if not match:
-            match = re.search(r'점수:\s*(\d+)\s*점', result)
-        if not match:
-            match = re.search(r'평가:\s*(\d+)\s*점', result)
-        if not match:
-            match = re.search(r'평가:\s*(\d+)\s*/\s*\d+', result)
-        if not match: 
-            match = re.search(r'결과:\s*(\d+)\s*점', result)
+        pattern = r'(총점|점수|평가|결과):\*?\*?\s*(\d+)\s*(?:/|\점|점)?\s*(?:\d+)?'
+        match = re.search(pattern, result)
         try:
             if match:
-                score = int(match.group(1).strip())
+                score = int(match.group(2))
                 self.logger.info('score: {}'.format(score))
                 if score <= 100:
                     return score
@@ -208,25 +195,6 @@ class BaseServing():
             self.logger.error(e)
             result = ''
         self.logger.info(f'LMM resposne_time: {round(time.time() - timestamp, 2)}')
-        return result
-
-    def remove_leading_br(self, result):
-        # 정규 표현식을 사용하여 맨 앞에 있는 <br> 태그를 제거합니다.
-        return re.sub(r'^\s*<br\s*/?>\s*', '', result, flags=re.IGNORECASE)
-
-    def replace_n_to_br(self, result):
-        result = result.replace('\n\n', '\n')
-        result = self.remove_leading_br(result.replace('\n', '<br>'))
-        result = re.sub(r'\*\*요약:\*\*<br>', '', result)
-        result = re.sub(r'\*\*Summary:\*\*<br>', '', result)
-        result = re.sub(r'\*\*', '', result)
-        result = result.replace('한국어로 요약된 내용:', '')
-        result = result.replace('한국어로 요약하자면 다음과 같습니다:', '')
-        result = result.replace('요약:<br>', '')
-        result = result.replace('요약<br>', '')
-        result = result.replace('번역:<br>', '')
-        result = result.replace('## 문서 번역 및 ', '')
-        result = result.replace('## 문서 요약: ', '') 
         return result
 
     def make_summary_prompt(self, content, lang_kor):

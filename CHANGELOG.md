@@ -1,3 +1,7 @@
+* 25/05/20
+    - 0.1.9 <br>
+        markdown table > html table <br>
+
 * 25/05/19
     - 0.1.8 <br>
         modify report prompt <br>
