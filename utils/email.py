@@ -170,7 +170,7 @@ def get_deep_research_html(subject, category, results, llm_model=''):
     '''
     for result in results:
         html += f'''
-        <p>참고 기사 : {result['reference']}
+        <p>원문 기사 : {result['reference']}
         <hr>
         {markdown.markdown(result['report'], extensions=['markdown.extensions.tables'])}
         <hr>

@@ -1,3 +1,7 @@
+* 25/05/24
+    - 0.2.0 <br>
+        revise report <br>
+
 * 25/05/20
     - 0.1.9 <br>
         markdown table > html table <br>

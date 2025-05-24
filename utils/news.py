@@ -107,7 +107,6 @@ class News():
 
         if lang_kor:
             url = f'https://news.google.com/rss/search?q={query_space}%20after:{yesterday}%20before:{today}&hl=ko&gl=KR&ceid=KR%3Ako'
-            #url = f'https://news.google.com/rss/search?q={query}&hl=ko&gl=KR&ceid=KR%3Ako'
         else:
             url = f'https://news.google.com/rss/search?q={query_space}%20after:{yesterday}%20before:{today}'
         self.logger.info(url)

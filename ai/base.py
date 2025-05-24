@@ -61,7 +61,6 @@ class BaseServing():
             token_len = self.get_token_length(prompt, lang_kor)
             if token_len < self.max_token:
                 text_kor = False
-                summary_count = 0 
                 while not text_kor:
                     result, messages = self.get_result_from_llm(prompt)
                     self.logger.info('-----')
@@ -88,15 +87,15 @@ class BaseServing():
             token_len = self.get_token_length(prompt, lang_kor)
             if token_len < self.max_token:
                 text_kor = False
-                report_count = 0 
                 while not text_kor:
-                    result, messages = self.get_result_from_llm(prompt)
+                    result, _ = self.get_result_from_llm(prompt)
                     self.logger.info('-----')
                     self.logger.info(result)
                     text_kor, korean_ratio = is_text_korean_or_english(result)  # 문장이 한국어인지 판별
                     self.logger.info('text_korean_ratio: {}'.format(korean_ratio))
                     if not text_kor:
                         prompt = self.make_deep_prompt(content, lang_kor)
+                result = self.revise_report(result)  # 보고서를 개선 
                 return result
             else:
                 content = content[:int(len(content) * 0.9)]
@@ -104,6 +103,13 @@ class BaseServing():
         except Exception as e:
             self.logger.error(e)
             return ''
+    
+    def revise_report(self, report):
+        prompt = REVISED_REPORT_PROMPT.format(report)
+        result, _ = self.get_result_from_llm(prompt)
+        self.logger.info('-----')
+        self.logger.info(result)
+        return result 
 
     def evaluate(self, title, cateogires, news_list, evaluation_type='zero shot'):
         self.logger.info(f'''{title} {evaluation_type} llm evaluate start!''')
@@ -124,7 +130,7 @@ class BaseServing():
         return ground_predicted_list
 
     def evaluate_reports(self, news_list):
-        self.logger.info(f'''llm evaluate report start!''')
+        self.logger.info(f'''llm evaluate reports start!''')
         ground_predicted_list = []
         for news in news_list:
             try:
