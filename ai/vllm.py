@@ -20,23 +20,21 @@ class VLLM(BaseServing):
     
     def get_result_from_llm(self, prompt, messages=[]):
         llm_url = LLM_DOMAIN + '/v1/chat/completions'
-        if not messages:
+        if messages:
+            messages.append({'role': 'user', 'content': prompt})
+        else:
             messages = [
                 {'role': 'system', 'content': 'You are a helpful assistant.'},
                 {'role': 'user', 'content': prompt}
             ]
-        else:
-            messages.append({'role': 'ueer', 'content': prompt})
+        result = ''
         if self.model:
             data = {'model': self.model, 'messages': messages, 'temperature': 0.3}
-            result = self.get_base_result_from_llm(llm_url, method='POST', data=data)
-            if result:
+            response_json = self.get_base_result_from_llm(llm_url, method='POST', data=data)
+            if response_json:
                 try:
-                    result = result['choices'][0]['message']['content']
+                    result = response_json['choices'][0]['message']['content']
                 except Exception as e:
                     self.logger.error(e)
-                    result = ''
-        else:
-            result = ''
         messages.append({'role': 'assistant', 'content': result})
         return result, messages

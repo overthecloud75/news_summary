@@ -42,20 +42,19 @@ class BaseServing():
             content = news['content']
             lang_kor = news['lang_kor']
             category = news['category']
-            self.logger.info(content)
             prompt = self.make_deep_prompt(content, lang_kor, category=category)
             token_len = self.get_token_length(prompt, lang_kor)
             if token_len < self.max_token:
                 text_kor = False
                 while not text_kor:
-                    result, _ = self.get_result_from_llm(prompt)
+                    result, messages = self.get_result_from_llm(prompt)
                     self.logger.info('-----')
-                    self.logger.info(result)
+                    self.logger.info(f'''deep research:\n{result}''')
                     text_kor, korean_ratio = is_text_korean_or_english(result)  # 문장이 한국어인지 판별
                     self.logger.info('text_korean_ratio: {}'.format(korean_ratio))
                     if not text_kor:
-                        prompt = self.make_deep_prompt(content, lang_kor, category=category)
-                result = self.revise_report(result)  # 보고서를 개선 
+                        prompt = self.make_deep_prompt(lang_kor, category=category)
+                result = self.revise_report(result, messages=messages)  # 보고서를 개선 
                 return result
             else:
                 content = content[:int(len(content) * 0.9)]
@@ -64,11 +63,14 @@ class BaseServing():
             self.logger.error(e)
             return ''
     
-    def revise_report(self, report):
-        prompt = REVISED_REPORT_PROMPT.format(report)
-        result, _ = self.get_result_from_llm(prompt)
+    def revise_report(self, report, messages=[]):
+        if messages:
+            prompt = REVISED_REPORT_PROMPT_WITHOUT_REPORT
+        else:
+            prompt = REVISED_REPORT_PROMPT.format(report)
+        result, _ = self.get_result_from_llm(prompt, messages=messages)
         self.logger.info('-----')
-        self.logger.info(result)
+        self.logger.info(f'''revise report:\n{result}''')
         return result 
 
     def evaluate_report(self, news):
@@ -139,5 +141,4 @@ class BaseServing():
             token_len = len(prompt.split(' ')) * 2
         else:
             token_len = len(prompt.split(' ')) * 1.3 
-        return token_len
-
+        return token_len 
