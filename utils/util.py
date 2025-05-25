@@ -6,18 +6,19 @@ import re
 from configs import logger
 
 def make_csv_file(results=[], filename='.csv'):
-    today = get_today()
-    csv_header = results[0].keys()
+    try:
+        csv_header = results[0].keys()
+        if not os.path.exists(filename):
+            make_csv_from_data(filename, data=csv_header)
 
-    if not os.path.exists(filename):
-        make_csv_from_data(filename, data=csv_header)
-
-    for i, result in enumerate(results):
-        data = [i + 1]
-        for key in csv_header:
-            if key != 'no':
-                data.append(result[key])
-        make_csv_from_data(filename, data=data)
+        for i, result in enumerate(results):
+            data = [i + 1]
+            for key in csv_header:
+                if key != 'no':
+                    data.append(result[key])
+            make_csv_from_data(filename, data=data)
+    except Exception as e:
+        logger.error(e)
 
 def make_csv_from_data(filename, data=[]):
     with open(filename, 'a', newline='', encoding='utf-8-sig') as csv_file:

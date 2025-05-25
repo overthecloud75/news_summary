@@ -12,6 +12,7 @@ def save_to_db(url, results):
     if response.status_code == 200:
         pass 
     else:
+        logger.info(f'''url: {url}''')
         logger.error(f'Failed to fetch data: {response.status_code}')
         logger.error(response.text)
 

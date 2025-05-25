@@ -1,10 +1,9 @@
-import re
-import time 
+import time
 import requests
 
 from .prompt import *
 from configs import logger, SYNONYM_DICTIONARY, LLM_API_KEY
-from utils import get_yesterday, get_today, is_text_korean_or_english, strip_useless
+from utils import is_text_korean_or_english, strip_useless
 
 class BaseServing():
     def __init__(self):
@@ -14,46 +13,6 @@ class BaseServing():
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {LLM_API_KEY}' 
         }
-    
-    def get_news_summary(self, news_list):
-        self.logger.info('news summary start!')
-        for news in news_list:
-            if news['content']:
-                news['summary'] = self.summarize_content(news['content'], news['lang_kor'])
-                news['llm_model'] = self.model
-                news['content_size'] = len(news['content'])
-                news['summary_size'] = len(news['summary'])
-                news['compression_ratio'] = round(news['summary_size'] / news['content_size'], 3) 
-        return news_list 
-
-    def get_ti_summary(self, results):
-        self.logger.info('ti summary start!')
-        ti_results = {
-            'ti_indicator': [],
-            'ti_description': [],
-        }
-        yesterday = get_yesterday()
-        for result in results:
-            created = result['created'].split('.')[0]+'z'
-            modified = result['modified'].split('.')[0]+'z'
-            indicators = result['indicators']
-            if result['malware_families']:
-                malware_family = result['malware_families'][0]
-            else:
-                malware_family = ''
-            if result['references']:
-                reference = result['references'][0]
-            else:
-                reference = ''
-            if yesterday in modified:
-                for indicator in indicators:        
-                    # save indicator 
-                    ti_results['ti_indicator'].append({'id': result['id'], 'modified': modified, 'name': result['name'], 'adversary': result['adversary'], 
-                        'indicator': indicator['indicator'].replace('.', '[.]'), 'type': indicator['type'], 'malware_family': malware_family})
-                summary = self.summarize_content(result['description'], False)
-                ti_results['ti_description'].append({'id': result['id'], 'created': created, 'modified': modified, 'name': result['name'], 'description': result['description'], 
-                    'summary': summary, 'adversary': result['adversary'], 'malware_family': malware_family, 'reference': reference})
-        return ti_results 
 
     def summarize_content(self, content, lang_kor):
         try:
@@ -62,7 +21,7 @@ class BaseServing():
             if token_len < self.max_token:
                 text_kor = False
                 while not text_kor:
-                    result, messages = self.get_result_from_llm(prompt)
+                    result, _ = self.get_result_from_llm(prompt)
                     self.logger.info('-----')
                     result = strip_useless(result)
                     self.logger.info(result)
@@ -83,6 +42,7 @@ class BaseServing():
             content = news['content']
             lang_kor = news['lang_kor']
             category = news['category']
+            self.logger.info(content)
             prompt = self.make_deep_prompt(content, lang_kor, category=category)
             token_len = self.get_token_length(prompt, lang_kor)
             if token_len < self.max_token:
@@ -94,7 +54,7 @@ class BaseServing():
                     text_kor, korean_ratio = is_text_korean_or_english(result)  # 문장이 한국어인지 판별
                     self.logger.info('text_korean_ratio: {}'.format(korean_ratio))
                     if not text_kor:
-                        prompt = self.make_deep_prompt(content, lang_kor)
+                        prompt = self.make_deep_prompt(content, lang_kor, category=category)
                 result = self.revise_report(result)  # 보고서를 개선 
                 return result
             else:
@@ -111,74 +71,20 @@ class BaseServing():
         self.logger.info(result)
         return result 
 
-    def evaluate(self, title, cateogires, news_list, evaluation_type='zero shot'):
-        self.logger.info(f'''{title} {evaluation_type} llm evaluate start!''')
-        ground_predicted_list = []
-        timestamp = get_today() + '_' + str(time.time())[:10]
-        for news in news_list:
-            try:
-                if evaluation_type == 'few shot':
-                    prompt = CATEGORY_FEW_PROMPT.format(cateogires, news['content'])
-                elif evaluation_type == 'few shot json':
-                    prompt = CATEGORY_FEW_JSON_PROMPT.format(cateogires, news['content'])
-                else:
-                    prompt = CATEGORY_PROMPT.format(cateogires, news['content'])
-                predicted = self.category_predict(title, timestamp, prompt, news)
-                ground_predicted_list.append(predicted)
-            except Exception as e:
-                self.logger.error(e)
-        return ground_predicted_list
+    def evaluate_report(self, news):
+        prompt = CATEGORY_REPORT_PROMPT.format(news['content'])
+        result, _ = self.get_result_from_llm(prompt)
+        return result
 
-    def evaluate_reports(self, news_list):
-        self.logger.info(f'''llm evaluate reports start!''')
-        ground_predicted_list = []
-        for news in news_list:
-            try:
-                prompt = CATEGORY_REPORT_PROMPT.format(news['content'])
-                result, messages = self.get_result_from_llm(prompt)
-                self.logger.info('report 설명: {}'.format(result))
-                score = self.get_point_from_result(result)
-                ground_predicted_list.append(score)
-            except Exception as e:
-                self.logger.error(e)
-        return ground_predicted_list
-
-    def get_point_from_result(self, result):
-        pattern = r'(총점|점수|평가|결과):\*?\*?\s*(\d+)\s*(?:/|\점|점)?\s*(?:\d+)?'
-        match = re.search(pattern, result)
-        try:
-            if match:
-                score = int(match.group(2))
-                self.logger.info('score: {}'.format(score))
-                if score <= 100:
-                    return score
-                else:
-                    return 0 
-            else:
-                self.logger.error('score를 찾을 수 없습니다.')
-                return 0
-        except Exception as e:
-            self.logger.error(e)
-            return 0 
-
-    def category_predict(self, title, timestamp, prompt, news):
-        ground_predicted = {'title': title, 'timestamp': timestamp}
-        if title == 'news': 
-            if news['query'] in SYNONYM_DICTIONARY:
-                ground_predicted['ground'] = SYNONYM_DICTIONARY[news['query']]
-            else:
-                ground_predicted['ground'] = news['query']
-        elif title == 'language':
-            if news['lang_kor']:
-                ground_predicted['ground'] = '한국어'
-            else: 
-                ground_predicted['ground'] = '영어'
-        ground_predicted['predicted'] = self.get_result_from_llm(prompt)
-        ground_predicted['source'] = news['source']
-        ground_predicted['name'] = news['name']
-        ground_predicted['reference'] = news['reference']
-        self.logger.info(f'''ground: {ground_predicted['ground']}, 'predicted': {ground_predicted['predicted']}''')
-        return ground_predicted
+    def category_predict(self, categories, title, news, evaluation_type='zero shot'):
+        if evaluation_type == 'few shot':
+            prompt = CATEGORY_FEW_PROMPT.format(categories, news['content'])
+        elif evaluation_type == 'few shot json':
+            prompt = CATEGORY_FEW_JSON_PROMPT.format(categories, news['content'])
+        else:
+            prompt = CATEGORY_PROMPT.format(categories, news['content'])
+        predicted, _ = self.get_result_from_llm(prompt)
+        return predicted 
             
     def get_result_from_llm(self, prompt, messages=[]):
         return '', []
