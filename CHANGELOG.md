@@ -1,3 +1,7 @@
+* 25/06/14
+    - 0.2.3 <br>
+        LLM model : gemma3:27b > qwen3:32b <br>
+
 * 25/05/25
     - 0.2.2 <br>
         use messages when revise report <br>

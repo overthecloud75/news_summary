@@ -59,16 +59,6 @@ if __name__ == '__main__':
                     try:
                         save_to_db(NEWS_SAVE_URL, news_list)
                         make_csv_file(results=news_list, filename=news_file_path)
-                        '''
-                        if SEND_EMAIL:
-                            subject = f'[{category} News Summary] {today}'
-                            html = get_news_html(subject, category, results=news_list, llm_model=llm.model)
-                            send_email(html, subject=subject)
-                        '''
-                        '''
-                        # evaluate category
-                            evaluate_category_from_llm(llm, news_list)
-                        '''
 
                         # deep research
                         report_list = deep_research_from_llm(llm, news_list)

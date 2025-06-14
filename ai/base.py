@@ -3,7 +3,7 @@ import requests
 
 from .prompt import *
 from configs import logger, SYNONYM_DICTIONARY, LLM_API_KEY
-from utils import is_text_korean_or_english, strip_useless
+from utils import is_text_korean_or_english, strip_useless, strip_think
 
 class BaseServing():
     def __init__(self):
@@ -48,13 +48,15 @@ class BaseServing():
                 text_kor = False
                 while not text_kor:
                     result, messages = self.get_result_from_llm(prompt)
+                    result = strip_think(result)
                     self.logger.info('-----')
                     self.logger.info(f'''deep research:\n{result}''')
                     text_kor, korean_ratio = is_text_korean_or_english(result)  # 문장이 한국어인지 판별
                     self.logger.info('text_korean_ratio: {}'.format(korean_ratio))
                     if not text_kor:
-                        prompt = self.make_deep_prompt(lang_kor, category=category)
+                        prompt = self.make_deep_prompt(content, lang_kor, category=category)
                 result = self.revise_report(result, messages=messages)  # 보고서를 개선 
+                result = strip_think(result)
                 return result
             else:
                 content = content[:int(len(content) * 0.9)]
@@ -69,6 +71,7 @@ class BaseServing():
         else:
             prompt = REVISED_REPORT_PROMPT.format(report)
         result, _ = self.get_result_from_llm(prompt, messages=messages)
+        result = strip_think(result)
         self.logger.info('-----')
         self.logger.info(f'''revise report:\n{result}''')
         return result 
@@ -76,7 +79,7 @@ class BaseServing():
     def evaluate_report(self, news):
         prompt = CATEGORY_REPORT_PROMPT.format(news['content'])
         result, _ = self.get_result_from_llm(prompt)
-        return result
+        return strip_think(result)
 
     def category_predict(self, categories, title, news, evaluation_type='zero shot'):
         if evaluation_type == 'few shot':

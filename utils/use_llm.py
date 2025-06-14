@@ -39,6 +39,7 @@ def get_ti_summary_from_llm(llm, results):
 def get_news_summary_from_llm(llm, news_list):
     logger.info('news summary start!')
     for news in news_list:
+        logger.info(f'news name: {news['name']}')
         news['llm_model'] = llm.model
         if news['content']:
             news['summary'] = llm.summarize_content(news['content'], news['lang_kor'])
@@ -50,7 +51,7 @@ def get_news_summary_from_llm(llm, news_list):
             news['compression_ratio'] = round(news['summary_size'] / news['content_size'], 3)
         else:
             news['compression_ratio'] = 0 
-            logger.info(f'''content size: 0, content: \n{news['content']}''')
+            logger.error(f'''content size: 0, content: \n{news['content']}''')
     return news
 
 def evaluate_category_from_llm(llm, news_list):
@@ -112,22 +113,26 @@ def deep_research_from_llm(llm, news_list):
     return report_list
    
 def get_point_from_result(result):
-    pattern = r'(총점|점수|평가|결과):\*?\*?\s*(\d+)\s*(?:/|\점|점)?\s*(?:\d+)?'
-    match = re.search(pattern, result)
-    try:
-        if match:
-            score = int(match.group(2))
-            logger.info('score: {}'.format(score))
-            if score <= 100:
-                return score
+    #pattern = r'(총점|점수|평가|결과):\*?\*?\s*(\d+)\s*(?:/|\점|점)?\s*(?:\d+)?'
+    pattern = r'(?:총점|점수|평가|결과):\s*\*{0,2}(\d+)\s*점?\*{0,2}'
+    if result:
+        match = re.search(pattern, result)
+        try:
+            if match:
+                score = int(match.group(1))
+                logger.info('score: {}'.format(score))
+                if score <= 100:
+                    return score
+                else:
+                    return 0 
             else:
-                return 0 
-        else:
-            logger.error('score를 찾을 수 없습니다.')
+                logger.error('score를 찾을 수 없습니다.')
+                return 0
+        except Exception as e:
+            logger.error(e)
             return 0
-    except Exception as e:
-        logger.error(e)
-        return 0 
+    else:
+        return 0
 
 
        
